@@ -333,7 +333,7 @@ export default function Home() {
           
           <div className="flex-row" style={{ marginBottom: "1rem", gap: "1rem", alignItems: "center" }}>
             <button className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }} onClick={handleImageUploadClick}>
-              <ImageIcon size={14} /> Upload Screenshot
+              <ImageIcon size={14} /> Upload
             </button>
             <input type="file" ref={imageInputRef} style={{ display: "none" }} accept="image/*" onChange={handleImageChange} />
             {screenshotName && <span style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>{screenshotName}</span>}
@@ -351,7 +351,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <Zap size={16} /> Extract Job Details
+                <Zap size={16} /> Extract
               </>
             )}
           </button>
@@ -474,7 +474,7 @@ export default function Home() {
                       <span style={{color: "var(--text-primary)"}}>{resumeExists ? "Resume.pdf" : "None"}</span>
                     </div>
                     <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleUploadClick}>
-                      {isUploading ? "Uploading..." : <><File size={12} /> Upload PDF</>}
+                      {isUploading ? "Uploading..." : <><File size={12} /> Upload</>}
                     </button>
                     <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".pdf" onChange={handleFileChange} />
                   </div>
@@ -486,11 +486,11 @@ export default function Home() {
                   >
                     {isSending ? (
                       <>
-                        <div className="spinner"></div> Sending Application...
+                        <div className="spinner"></div> Sending...
                       </>
                     ) : (
                       <>
-                        <Send size={16} /> Send Email via Gmail
+                        <Send size={16} /> Send
                       </>
                     )}
                   </button>
