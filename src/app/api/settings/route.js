@@ -5,9 +5,19 @@ import { kv } from '@vercel/kv';
 import fs from 'fs';
 import path from 'path';
 
+const getLocalDataPath = () => {
+  let dataPath = path.join(process.cwd(), 'local_kv.json');
+  try {
+    fs.accessSync(process.cwd(), fs.constants.W_OK);
+  } catch (e) {
+    dataPath = path.join('/tmp', 'local_kv.json');
+  }
+  return dataPath;
+};
+
 const getLocalData = () => {
   try {
-    const dataPath = path.join(process.cwd(), 'local_kv.json');
+    const dataPath = getLocalDataPath();
     if (fs.existsSync(dataPath)) {
       return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
     }
@@ -16,7 +26,7 @@ const getLocalData = () => {
 };
 
 const setLocalData = (key, value) => {
-  const dataPath = path.join(process.cwd(), 'local_kv.json');
+  const dataPath = getLocalDataPath();
   const data = getLocalData();
   data[key] = value;
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
