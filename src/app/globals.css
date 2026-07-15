@@ -13,6 +13,11 @@
   --accent-cyan: #FFFFFF;
   --accent-emerald: #FFFFFF;
   --accent-rose: #FF0000;
+
+  --nav-bg: rgba(10, 10, 10, 0.75);
+  --nav-shadow: rgba(0, 0, 0, 0.5);
+  --hover-bg: rgba(255, 255, 255, 0.1);
+  --btn-text: #000000;
   
   --font-sans: 'Geist', 'Geist Variable', system-ui, -apple-system, sans-serif;
   --font-body: 'Geist', 'Geist Variable', system-ui, -apple-system, sans-serif;
@@ -25,11 +30,30 @@
   --transition: all 0.15s ease;
   
   color-scheme: dark;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme='light'] {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FAFAFA;
+  --bg-tertiary: #F4F4F5;
+  --glass-border: #E4E4E7;
+  --glass-border-focus: #A1A1AA;
+  
+  --text-primary: #09090B;
+  --text-secondary: #52525B;
+  --text-muted: #71717A;
+  
+  --accent: #000000;
+  --accent-cyan: #000000;
+  --accent-emerald: #000000;
+  --accent-rose: #FF0000;
+
+  --nav-bg: rgba(255, 255, 255, 0.75);
+  --nav-shadow: rgba(0, 0, 0, 0.05);
+  --hover-bg: rgba(0, 0, 0, 0.05);
+  --btn-text: #FFFFFF;
+  
+  color-scheme: light;
 }
 
 * {
@@ -40,7 +64,11 @@
 
 body {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
@@ -55,15 +83,74 @@ body {
   padding: 2rem;
 }
 
-header {
+.floating-nav {
+  position: sticky;
+  top: 1rem;
+  z-index: 50;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--nav-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  box-shadow: 0 4px 30px var(--nav-shadow);
+  transition: var(--transition);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--btn-text);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.nav-logo-icon {
+  /* Inherits color */
+}
+
+.nav-title {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.icon-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
 }
 
 .logo-section { display: flex; align-items: center; gap: 0.75rem; }
-.logo-icon { display: none; }
 
 h1 {
   font-family: var(--font-mono);
@@ -73,7 +160,19 @@ h1 {
   color: var(--text-primary);
 }
 
-.subtitle { display: none; }
+@media (max-width: 600px) {
+  .app-container {
+    padding: 1rem;
+  }
+  .floating-nav {
+    top: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 1rem;
+  }
+  .nav-title {
+    font-size: 1rem;
+  }
+}
 
 .dashboard-grid {
   display: grid;
@@ -153,11 +252,11 @@ textarea { resize: vertical; min-height: 120px; }
 
 .btn-primary, .btn-success {
   background: var(--accent);
-  color: #000;
+  color: var(--btn-text);
 }
 
 .btn-primary:hover:not(:disabled), .btn-success:hover:not(:disabled) {
-  background: #EAEAEA;
+  opacity: 0.9;
 }
 
 .btn-secondary {
@@ -185,7 +284,7 @@ textarea { resize: vertical; min-height: 120px; }
 .badge-success { color: var(--text-primary); }
 .badge-danger { color: var(--text-muted); border-color: var(--glass-border); }
 
-.flex-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.flex-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .flex-gap-2 { display: flex; align-items: center; gap: 0.5rem; }
 
 .tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 0.5rem; }
