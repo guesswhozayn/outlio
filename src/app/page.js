@@ -58,20 +58,39 @@ export default function Home() {
 
   const loadSettings = async () => {
     try {
-      const res = await fetch("/api/settings");
+      const email = session?.user?.email;
+      let localSettings = {};
+      if (email) {
+        localSettings = await localforage.getItem(`automailer_settings_${email}`) || {};
+      }
+
+      const res = await fetch("/api/settings", { cache: "no-store" });
       const parsed = await res.json();
+      
+      let finalSettings = { ...localSettings };
+
       if (parsed && Object.keys(parsed).length > 0 && !parsed.error) {
-        setSettings(prev => ({ ...prev, ...parsed }));
-        setUserProfile({ name: parsed.USER_NAME || "", phone: parsed.USER_PHONE || "", linkedin: parsed.USER_LINKEDIN || "" });
-        setHasGeminiKey(!!parsed.GEMINI_API_KEY);
-        setHasGmailConfig(!!parsed.GMAIL_USER && !!parsed.GMAIL_APP_PASSWORD);
-        if (parsed.GEMINI_API_KEY) {
-          fetchAvailableModels(parsed.GEMINI_API_KEY);
+        // If server returns data (e.g., from KV), it overrides local
+        const hasActualData = Object.values(parsed).some(val => val !== "");
+        if (hasActualData) {
+          finalSettings = { ...finalSettings, ...parsed };
         }
+      }
+
+      if (email && Object.keys(finalSettings).length > 0) {
+        await localforage.setItem(`automailer_settings_${email}`, finalSettings);
+      }
+
+      setSettings(prev => ({ ...prev, ...finalSettings }));
+      setUserProfile({ name: finalSettings.USER_NAME || "", phone: finalSettings.USER_PHONE || "", linkedin: finalSettings.USER_LINKEDIN || "" });
+      setHasGeminiKey(!!finalSettings.GEMINI_API_KEY);
+      setHasGmailConfig(!!finalSettings.GMAIL_USER && !!finalSettings.GMAIL_APP_PASSWORD);
+      if (finalSettings.GEMINI_API_KEY) {
+        fetchAvailableModels(finalSettings.GEMINI_API_KEY);
       }
       
       const storedResume = await localforage.getItem("automailer_resume");
-      if (storedResume) {_92333577149
+      if (storedResume) {
         setResumeFile(storedResume);
         setResumeExists(true);
         addLog("Default resume loaded from browser storage.", "success");
@@ -127,6 +146,11 @@ export default function Home() {
     e.preventDefault();
     setIsSavingSettings(true);
     try {
+      const email = session?.user?.email;
+      if (email) {
+        await localforage.setItem(`automailer_settings_${email}`, settings);
+      }
+
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
