@@ -3,9 +3,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import localforage from "localforage";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
+import { Mail, Settings, LogOut, Zap, Image as ImageIcon, File, Send, Sun, Moon } from "lucide-react";
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [postText, setPostText] = useState("");
   const [fields, setFields] = useState({
     email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "",
@@ -45,6 +49,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+    setMounted(true);
     if (status === "authenticated") {
       loadSettings();
       addLog("Dashboard initialized. Ready to process jobs.", "info");
@@ -122,18 +127,24 @@ export default function Home() {
     e.preventDefault();
     setIsSavingSettings(true);
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings)
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to save settings");
+      }
+
       setUserProfile({ name: settings.USER_NAME, phone: settings.USER_PHONE, linkedin: settings.USER_LINKEDIN });
       setHasGeminiKey(!!settings.GEMINI_API_KEY);
       setHasGmailConfig(!!settings.GMAIL_USER && !!settings.GMAIL_APP_PASSWORD);
       addLog("Settings saved successfully.", "success");
       setSettingsOpen(false);
     } catch (e) {
-      addLog("Error saving settings.", "error");
+      addLog(`Error saving settings: ${e.message}`, "error");
     } finally {
       setIsSavingSettings(false);
     }
@@ -256,7 +267,7 @@ export default function Home() {
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
             Sign in with Google to securely sync your configuration across devices.
           </p>
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => signIn("google")}>
+          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => signIn("google")}>
             Sign in with Google
           </button>
         </div>
@@ -267,30 +278,30 @@ export default function Home() {
   return (
     <div className="app-container">
       {/* Header */}
-      <header>
+      <header className="floating-nav">
         <div className="logo-section">
-          <div className="logo-icon">AM</div>
+          <div className="nav-logo">
+            <Mail size={18} className="nav-logo-icon" />
+          </div>
           <div>
-            <h1>AutoMailer</h1>
-            <div className="subtitle">LI-JOB APPLICATION BOT</div>
+            <h1 className="nav-title">AutoMailer</h1>
           </div>
         </div>
-        <div className="flex-gap-2">
-          {resumeExists ? (
-            <span className="badge badge-success">Resume Loaded</span>
-          ) : (
-            <span className="badge badge-danger">Resume Missing</span>
+        <div className="nav-actions">
+          {mounted && (
+            <button
+              className="icon-btn"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              title="Toggle Theme"
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
           )}
-          {hasGmailConfig ? (
-            <span className="badge badge-success">Gmail Ready</span>
-          ) : (
-            <span className="badge badge-danger">Gmail Config</span>
-          )}
-          <button className="btn btn-secondary" onClick={() => setSettingsOpen(true)}>
-            Settings
+          <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="Settings">
+            <Settings size={18} />
           </button>
-          <button className="btn btn-secondary" onClick={() => signOut()}>
-            Sign Out
+          <button className="icon-btn" onClick={() => signOut()} title="Sign Out">
+            <LogOut size={18} />
           </button>
         </div>
       </header>
@@ -322,7 +333,7 @@ export default function Home() {
           
           <div className="flex-row" style={{ marginBottom: "1rem", gap: "1rem", alignItems: "center" }}>
             <button className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }} onClick={handleImageUploadClick}>
-              Upload Screenshot
+              <ImageIcon size={14} /> Upload Screenshot
             </button>
             <input type="file" ref={imageInputRef} style={{ display: "none" }} accept="image/*" onChange={handleImageChange} />
             {screenshotName && <span style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>{screenshotName}</span>}
@@ -339,7 +350,9 @@ export default function Home() {
                 <div className="spinner"></div> Extracting details...
               </>
             ) : (
-              "Extract Job Details"
+              <>
+                <Zap size={16} /> Extract Job Details
+              </>
             )}
           </button>
         </div>
@@ -461,7 +474,7 @@ export default function Home() {
                       <span style={{color: "var(--text-primary)"}}>{resumeExists ? "Resume.pdf" : "None"}</span>
                     </div>
                     <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleUploadClick}>
-                      {isUploading ? "Uploading..." : "Upload PDF"}
+                      {isUploading ? "Uploading..." : <><File size={12} /> Upload PDF</>}
                     </button>
                     <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".pdf" onChange={handleFileChange} />
                   </div>
@@ -476,7 +489,9 @@ export default function Home() {
                         <div className="spinner"></div> Sending Application...
                       </>
                     ) : (
-                      "Send Email via Gmail"
+                      <>
+                        <Send size={16} /> Send Email via Gmail
+                      </>
                     )}
                   </button>
                 </div>
