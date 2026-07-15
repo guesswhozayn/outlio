@@ -2,7 +2,7 @@ import "./globals.css";
 import { Providers } from "../components/Providers";
 
 export const metadata = {
-  title: "AutoMailer // LinkedIn Application Bot",
+  title: "AutoMailer",
   description: "A minimalist bot for parsing job applications using Gemini.",
 };
 
