@@ -1,14 +1,25 @@
 {
-  "name": "linkedin-bot-root",
-  "version": "1.0.0",
-  "description": "Root manager for LinkedIn Job Application Auto-Mailer Bot",
+  "name": "next-app",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "backend": "node backend/server.js",
-    "frontend": "npm --prefix frontend run dev",
-    "dev": "npx concurrently --kill-others \"npm run backend\" \"npm run frontend\""
+    "dev": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@vercel/kv": "^3.0.0",
+    "localforage": "^1.10.0",
+    "next": "16.2.10",
+    "next-auth": "^4.24.14",
+    "nodemailer": "^9.0.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10"
   }
 }
