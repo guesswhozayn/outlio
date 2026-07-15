@@ -5,6 +5,8 @@ import { kv } from '@vercel/kv';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 const getLocalDataPath = () => {
   let dataPath = path.join(process.cwd(), 'local_kv.json');
   try {
