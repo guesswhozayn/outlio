@@ -71,7 +71,7 @@ export default function Home() {
       }
       
       const storedResume = await localforage.getItem("automailer_resume");
-      if (storedResume) {
+      if (storedResume) {_92333577149
         setResumeFile(storedResume);
         setResumeExists(true);
         addLog("Default resume loaded from browser storage.", "success");
@@ -471,7 +471,7 @@ export default function Home() {
                   <div className="flex-row" style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                     <div className="flex-gap-2">
                       <span>Attachment:</span>
-                      <span style={{color: "var(--text-primary)"}}>{resumeExists ? "Resume.pdf" : "None"}</span>
+                      <span style={{color: "var(--text-primary)"}}>{resumeExists ? "resume.pdf" : "None"}</span>
                     </div>
                     <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleUploadClick}>
                       {isUploading ? "Uploading..." : <><File size={12} /> Upload</>}
