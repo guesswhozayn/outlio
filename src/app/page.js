@@ -61,7 +61,11 @@ export default function Home() {
       const email = session?.user?.email;
       let localSettings = {};
       if (email) {
-        localSettings = await localforage.getItem(`automailer_settings_${email}`) || {};
+        try {
+          localSettings = await localforage.getItem(`automailer_settings_${email}`) || {};
+        } catch (err) {
+          console.warn("Browser storage access denied:", err);
+        }
       }
 
       const res = await fetch("/api/settings", { cache: "no-store" });
@@ -78,7 +82,11 @@ export default function Home() {
       }
 
       if (email && Object.keys(finalSettings).length > 0) {
-        await localforage.setItem(`automailer_settings_${email}`, finalSettings);
+        try {
+          await localforage.setItem(`automailer_settings_${email}`, finalSettings);
+        } catch (err) {
+          console.warn("Browser storage access denied:", err);
+        }
       }
 
       setSettings(prev => ({ ...prev, ...finalSettings }));
@@ -89,11 +97,15 @@ export default function Home() {
         fetchAvailableModels(finalSettings.GEMINI_API_KEY);
       }
       
-      const storedResume = await localforage.getItem("automailer_resume");
-      if (storedResume) {
-        setResumeFile(storedResume);
-        setResumeExists(true);
-        addLog("Default resume loaded from browser storage.", "success");
+      try {
+        const storedResume = await localforage.getItem("automailer_resume");
+        if (storedResume) {
+          setResumeFile(storedResume);
+          setResumeExists(true);
+          addLog("Default resume loaded from browser storage.", "success");
+        }
+      } catch (err) {
+        console.warn("Browser storage access denied for resume:", err);
       }
     } catch (e) {
       console.error(e);
@@ -148,7 +160,11 @@ export default function Home() {
     try {
       const email = session?.user?.email;
       if (email) {
-        await localforage.setItem(`automailer_settings_${email}`, settings);
+        try {
+          await localforage.setItem(`automailer_settings_${email}`, settings);
+        } catch (err) {
+          console.warn("Browser storage access denied:", err);
+        }
       }
 
       const res = await fetch("/api/settings", {
