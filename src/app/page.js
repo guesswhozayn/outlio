@@ -172,7 +172,7 @@ export default function Home() {
     let sub = "";
 
     if (isFollowUp) {
-      body = `${salutation}\n\nI hope you are having a great week.\n\nI'm writing to follow up on my application for the ${pTitle} role${fields.company ? ` at ${fields.company}` : ''}. I remain very interested in the opportunity to join your team and would love to know if there are any updates regarding the hiring process.\n\nPlease let me know if you need any additional information or work samples from my end. I've re-attached my resume for your convenience.\n\nThank you again for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      body = `${salutation}\n\nI'm writing to follow up on my application for the ${pTitle} role${fields.company ? ` at ${fields.company}` : ''}. I remain very interested in the opportunity to join your team and would love to know if there are any updates regarding the hiring process.\n\nPlease let me know if you need any additional information or work samples from my end. I've re-attached my resume for your convenience.\n\nThank you again for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Following up - Application for ${pTitle} - ${uName}`;
     } else if (isColdEmail) {
       let roleText = pTitle;
@@ -196,11 +196,11 @@ export default function Home() {
 
       const cName = fields.company ? fields.company : "your company";
 
-      body = `${salutation}\n\nI hope you are doing well.\n\nI am writing to express my interest in any potential intern or junior ${roleText} opportunities at ${cName}. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.\n\nI have attached my resume for your review. I would love the opportunity to briefly connect or discuss any upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
-      sub = `Inquiry regarding Intern/Junior ${roleText} opportunities - ${uName}`;
+      body = `${salutation}\n\nI am writing to express my interest in any potential intern or junior ${roleText} roles at ${cName}. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.\n\nI have attached my resume for your review. I would love the opportunity to briefly connect or discuss any upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      sub = `Application for Intern/Junior ${roleText} - ${uName}`;
     } else {
       const cName = fields.company ? fields.company : "your company";
-      body = `${salutation}\n\nI hope you are doing well.\n\nI am interested in the ${pTitle} role at ${cName}. I have experience in ${pSkills} and believe my skills align well with the requirements.\n\nPlease find my resume attached for your review. I would appreciate the opportunity to discuss how I can contribute to your team.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      body = `${salutation}\n\nI am interested in the ${pTitle} role at ${cName}. I have experience in ${pSkills} and believe my skills align well with the requirements.\n\nPlease find my resume attached for your review. I would appreciate the opportunity to discuss how I can contribute to your team.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Application for ${pTitle} - ${uName}`;
     }
 
