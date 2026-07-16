@@ -183,15 +183,15 @@ export default function Home() {
       if (coldEmailRole === "Frontend") {
          roleText = "Frontend Developer";
          contributionText = "help build engaging, responsive user interfaces and learn from your engineering team";
-         coldEmailSkills = "JavaScript, TypeScript, React, Next.js, Context API, Redux Toolkit, TanStack Query, Zustand, and TailwindCSS";
+         coldEmailSkills = "JavaScript, TypeScript, React, Next.js, and TailwindCSS";
       } else if (coldEmailRole === "Backend") {
          roleText = "Backend Developer";
          contributionText = "help build scalable, robust server-side architecture and learn from your engineering team";
-         coldEmailSkills = "Node.js, Express.js, Python, SQL, C++, REST APIs, GraphQL, Socket.io, BullMQ, Stripe Payments, MongoDB, MySQL, PostgreSQL, Redis, JWT, OAuth, RBAC, CI/CD, Docker, and Linux";
+         coldEmailSkills = "Node.js, Python, SQL, REST/GraphQL APIs, PostgreSQL, MongoDB, and Docker";
       } else if (coldEmailRole === "Full Stack") {
          roleText = "Full Stack Developer";
          contributionText = "contribute across the stack to deliver end-to-end features and learn from your engineering team";
-         coldEmailSkills = "JavaScript, TypeScript, Python, React, Next.js, Node.js, Express.js, REST APIs, GraphQL, MongoDB, PostgreSQL, Redis, TailwindCSS, Docker, and CI/CD";
+         coldEmailSkills = "TypeScript, React, Next.js, Node.js, PostgreSQL, MongoDB, and Docker";
       }
 
       const cName = fields.company ? fields.company : "your company";
