@@ -192,6 +192,10 @@ export default function Home() {
          roleText = "Full Stack Developer";
          contributionText = "contribute across the stack to deliver end-to-end features and learn from your engineering team";
          coldEmailSkills = "TypeScript, React, Next.js, Node.js, PostgreSQL, MongoDB, and Docker";
+      } else if (coldEmailRole === "Software Engineer") {
+         roleText = "Software Engineer";
+         contributionText = "help build robust, scalable applications and solve complex problems with your engineering team";
+         coldEmailSkills = "JavaScript, TypeScript, Python, C++, SQL, Node.js, and Docker";
       }
 
       const cName = fields.company ? fields.company : "your company";
@@ -655,6 +659,7 @@ export default function Home() {
                       <option value="Frontend">Frontend Development</option>
                       <option value="Backend">Backend Development</option>
                       <option value="Full Stack">Full Stack Development</option>
+                      <option value="Software Engineer">Software Engineering</option>
                     </select>
                   </div>
                 )}
