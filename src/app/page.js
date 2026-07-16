@@ -194,10 +194,13 @@ export default function Home() {
          coldEmailSkills = "JavaScript, TypeScript, Python, React, Next.js, Node.js, Express.js, REST APIs, GraphQL, MongoDB, PostgreSQL, Redis, TailwindCSS, Docker, and CI/CD";
       }
 
-      body = `${salutation}\n\nI hope you are doing well.\n\nI am writing to express my interest in any potential intern or junior ${roleText} opportunities at your company. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.\n\nI have attached my resume for your review. I would love the opportunity to briefly connect or discuss any upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      const cName = fields.company ? fields.company : "your company";
+
+      body = `${salutation}\n\nI hope you are doing well.\n\nI am writing to express my interest in any potential intern or junior ${roleText} opportunities at ${cName}. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.\n\nI have attached my resume for your review. I would love the opportunity to briefly connect or discuss any upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Inquiry regarding Intern/Junior ${roleText} opportunities - ${uName}`;
     } else {
-      body = `${salutation}\n\nI hope you are doing well.\n\nI am interested in the ${pTitle} role at your company. I have experience in ${pSkills} and believe my skills align well with the requirements.\n\nPlease find my resume attached for your review. I would appreciate the opportunity to discuss how I can contribute to your team.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      const cName = fields.company ? fields.company : "your company";
+      body = `${salutation}\n\nI hope you are doing well.\n\nI am interested in the ${pTitle} role at ${cName}. I have experience in ${pSkills} and believe my skills align well with the requirements.\n\nPlease find my resume attached for your review. I would appreciate the opportunity to discuss how I can contribute to your team.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Application for ${pTitle} - ${uName}`;
     }
 
