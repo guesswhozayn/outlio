@@ -21,7 +21,7 @@ export default function Home() {
   const [settings, setSettings] = useState({
     GEMINI_API_KEY: "", GEMINI_MODEL: "gemini-3.5-flash",
     GMAIL_USER: "", GMAIL_APP_PASSWORD: "",
-    USER_NAME: "", USER_PHONE: "", USER_LINKEDIN: "", USER_GITHUB: "", USER_PORTFOLIO: "", USER_SKILLS: "",
+    USER_NAME: "", USER_PHONE: "", USER_LINKEDIN: "", USER_GITHUB: "", USER_PORTFOLIO: "",
   });
 
   const [activeTab, setActiveTab] = useState("preview");
@@ -99,8 +99,7 @@ export default function Home() {
         phone: finalSettings.USER_PHONE || "", 
         linkedin: finalSettings.USER_LINKEDIN || "",
         github: finalSettings.USER_GITHUB || "",
-        portfolio: finalSettings.USER_PORTFOLIO || "",
-        skills: finalSettings.USER_SKILLS || ""
+        portfolio: finalSettings.USER_PORTFOLIO || ""
       });
       setHasGeminiKey(!!finalSettings.GEMINI_API_KEY);
       setHasGmailConfig(!!finalSettings.GMAIL_USER && !!finalSettings.GMAIL_APP_PASSWORD);
@@ -156,46 +155,7 @@ export default function Home() {
   const compileTemplate = () => {
     const pTitle = fields.jobTitle || "[Position Title]";
     
-    let domain = isColdEmail ? coldEmailRole : "General";
-    if (domain === "General" && pTitle !== "[Position Title]") {
-      const t = pTitle.toLowerCase();
-      if (t.includes("front") || t.includes("ui") || t.includes("ux")) domain = "Frontend";
-      else if (t.includes("back") || t.includes("api") || t.includes("data")) domain = "Backend";
-      else if (t.includes("full") || t.includes("stack")) domain = "Full Stack";
-    }
-
-    const getRelevantSkills = (allSkills, targetDomain) => {
-      if (!allSkills) return "";
-      const skillsArray = allSkills.split(',').map(s => s.trim()).filter(Boolean);
-      if (targetDomain === "General") return allSkills;
-      
-      const frontendKw = ['react', 'next', 'vue', 'angular', 'tailwind', 'css', 'html', 'bootstrap', 'javascript', 'typescript', 'js', 'ts', 'context', 'redux', 'zustand'];
-      const backendKw = ['node', 'express', 'python', 'java', 'spring', 'c#', 'php', 'ruby', 'sql', 'postgres', 'mysql', 'mongo', 'redis', 'aws', 'docker', 'api', 'graphql', 'jwt', 'oauth', 'javascript', 'typescript', 'js', 'ts'];
-      
-      let relevant = [];
-      if (targetDomain === "Frontend") {
-        relevant = skillsArray.filter(s => frontendKw.some(k => s.toLowerCase().includes(k)));
-      } else if (targetDomain === "Backend") {
-        relevant = skillsArray.filter(s => backendKw.some(k => s.toLowerCase().includes(k)));
-      } else if (targetDomain === "Full Stack") {
-        const fe = skillsArray.filter(s => frontendKw.some(k => s.toLowerCase().includes(k))).slice(0, 3);
-        const be = skillsArray.filter(s => backendKw.some(k => s.toLowerCase().includes(k))).slice(0, 3);
-        relevant = [...new Set([...fe, ...be])];
-      }
-      
-      if (relevant.length === 0) return allSkills;
-      if (relevant.length === 1) return relevant[0];
-      if (relevant.length === 2) return `${relevant[0]} and ${relevant[1]}`;
-      return `${relevant.slice(0, -1).join(', ')}, and ${relevant[relevant.length - 1]}`;
-    };
-
-    let defaultSkills = "[your field/technology/domain]";
-    
-    if (userProfile.skills) {
-      defaultSkills = getRelevantSkills(userProfile.skills, domain);
-    }
-    
-    const pSkills = isColdEmail ? defaultSkills : (fields.skills || defaultSkills);
+    const pSkills = fields.skills || "[your field/technology/domain]";
 
     const uName = fields.userName || userProfile.name || "[Your Name]";
     const uPhone = fields.userPhone || userProfile.phone || "[Phone Number]";
@@ -218,18 +178,23 @@ export default function Home() {
       let roleText = pTitle;
       let contributionText = "contribute to your team and learn from your experts";
       
-      if (domain === "Frontend") {
+      let coldEmailSkills = pSkills;
+
+      if (coldEmailRole === "Frontend") {
          roleText = "Frontend Developer";
          contributionText = "help build engaging, responsive user interfaces and learn from your engineering team";
-      } else if (domain === "Backend") {
+         coldEmailSkills = "JavaScript, TypeScript, React, Next.js, Context API, Redux Toolkit, TanStack Query, Zustand, and TailwindCSS";
+      } else if (coldEmailRole === "Backend") {
          roleText = "Backend Developer";
          contributionText = "help build scalable, robust server-side architecture and learn from your engineering team";
-      } else if (domain === "Full Stack") {
+         coldEmailSkills = "Node.js, Express.js, Python, SQL, C++, REST APIs, GraphQL, Socket.io, BullMQ, Stripe Payments, MongoDB, MySQL, PostgreSQL, Redis, JWT, OAuth, RBAC, CI/CD, Docker, and Linux";
+      } else if (coldEmailRole === "Full Stack") {
          roleText = "Full Stack Developer";
          contributionText = "contribute across the stack to deliver end-to-end features and learn from your engineering team";
+         coldEmailSkills = "JavaScript, TypeScript, Python, React, Next.js, Node.js, Express.js, REST APIs, GraphQL, MongoDB, PostgreSQL, Redis, TailwindCSS, Docker, and CI/CD";
       }
 
-      body = `${salutation}\n\nI hope you are doing well.\n\nI am writing to express my interest in any potential intern or junior ${roleText} opportunities at your company. With my background in ${pSkills}, I am eager to ${contributionText}.\n\nI have attached my resume for your review. I would love the opportunity to briefly connect or discuss any upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      body = `${salutation}\n\nI hope you are doing well.\n\nI am writing to express my interest in any potential intern or junior ${roleText} opportunities at your company. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.\n\nI have attached my resume for your review. I would love the opportunity to briefly connect or discuss any upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Inquiry regarding Intern/Junior ${roleText} opportunities - ${uName}`;
     } else {
       body = `${salutation}\n\nI hope you are doing well.\n\nI am interested in the ${pTitle} role at your company. I have experience in ${pSkills} and believe my skills align well with the requirements.\n\nPlease find my resume attached for your review. I would appreciate the opportunity to discuss how I can contribute to your team.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
@@ -271,8 +236,7 @@ export default function Home() {
         phone: settings.USER_PHONE, 
         linkedin: settings.USER_LINKEDIN,
         github: settings.USER_GITHUB,
-        portfolio: settings.USER_PORTFOLIO,
-        skills: settings.USER_SKILLS
+        portfolio: settings.USER_PORTFOLIO
       });
       setHasGeminiKey(!!settings.GEMINI_API_KEY);
       setHasGmailConfig(!!settings.GMAIL_USER && !!settings.GMAIL_APP_PASSWORD);
@@ -897,7 +861,7 @@ export default function Home() {
           </div>
 
           <div className="form-group">
-            <label>GitHub Profile URL (Optional)</label>
+            <label>GitHub Profile URL</label>
             <input
               type="text"
               placeholder="github.com/username"
@@ -907,26 +871,13 @@ export default function Home() {
           </div>
 
           <div className="form-group">
-            <label>Portfolio Website (Optional)</label>
+            <label>Portfolio Website</label>
             <input
               type="text"
               placeholder="yourportfolio.com"
               value={settings.USER_PORTFOLIO}
               onChange={(e) => setSettings({ ...settings, USER_PORTFOLIO: e.target.value })}
             />
-          </div>
-
-          <div className="form-group">
-            <label>Technical Skills (Comma separated, Optional)</label>
-            <textarea
-              placeholder="e.g., React, Next.js, Node.js, Python"
-              value={settings.USER_SKILLS}
-              onChange={(e) => setSettings({ ...settings, USER_SKILLS: e.target.value })}
-              style={{ minHeight: "60px", fontFamily: "inherit" }}
-            />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Used as a default in templates if no specific skills are extracted from the job description.
-            </small>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ marginTop: "1rem" }} disabled={isSavingSettings}>
