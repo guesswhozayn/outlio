@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req) {
   try {
-    const { latexCode } = await req.json();
+    const { latexCode, userName } = await req.json();
 
     if (!latexCode) {
       return NextResponse.json({ error: "No LaTeX code provided." }, { status: 400 });
@@ -26,11 +26,13 @@ export async function POST(req) {
 
     const arrayBuffer = await res.arrayBuffer();
     
+    const formattedName = (userName || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
+    
     return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="zain_resume.pdf"',
+        'Content-Disposition': `attachment; filename="${formattedName}"`,
       },
     });
 

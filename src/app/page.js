@@ -343,11 +343,25 @@ export default function Home() {
     addLog("Tailoring resume with Gemini...", "info");
     
     try {
+      let tailoredLatexTemplate = settings.LATEX_RESUME;
+      const replacements = {
+        "\\{\\{USER_NAME\\}\\}": settings.USER_NAME || "",
+        "\\{\\{USER_PHONE\\}\\}": settings.USER_PHONE || "",
+        "\\{\\{USER_EMAIL\\}\\}": settings.GMAIL_USER || session?.user?.email || "",
+        "\\{\\{USER_LINKEDIN\\}\\}": settings.USER_LINKEDIN || "",
+        "\\{\\{USER_GITHUB\\}\\}": settings.USER_GITHUB || "",
+        "\\{\\{USER_PORTFOLIO\\}\\}": settings.USER_PORTFOLIO || ""
+      };
+      
+      Object.entries(replacements).forEach(([key, value]) => {
+        tailoredLatexTemplate = tailoredLatexTemplate.replace(new RegExp(key, 'g'), value);
+      });
+
       const tailorRes = await fetch("/api/tailor-resume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          latexCode: settings.LATEX_RESUME,
+          latexCode: tailoredLatexTemplate,
           jobDescription: postText || fields.skills || "Software Engineering Role",
           userApiKey: settings.GEMINI_API_KEY,
           userModel: settings.GEMINI_MODEL
@@ -361,7 +375,7 @@ export default function Home() {
       const compileRes = await fetch("/api/compile-latex", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ latexCode: tailorData.latex })
+        body: JSON.stringify({ latexCode: tailorData.latex, userName: settings.USER_NAME })
       });
       
       if (!compileRes.ok) {
@@ -370,10 +384,11 @@ export default function Home() {
       }
       
       const pdfBlob = await compileRes.blob();
-      const file = new window.File([pdfBlob], "zain_resume.pdf", { type: "application/pdf" });
+      const defaultFileName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
+      pdfBlob.name = defaultFileName;
       
-      await localforage.setItem("automailer_resume", file);
-      setResumeFile(file);
+      await localforage.setItem("automailer_resume", pdfBlob);
+      setResumeFile(pdfBlob);
       setResumeExists(true);
       addLog("Tailored resume generated and attached successfully!", "success");
       
@@ -395,7 +410,9 @@ export default function Home() {
     formData.append("emailBody", emailBody);
     formData.append("gmailUser", settings.GMAIL_USER);
     formData.append("gmailAppPassword", settings.GMAIL_APP_PASSWORD);
-    formData.append("resume", resumeFile);
+    formData.append("userName", settings.USER_NAME || "");
+    const defaultFileName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
+    formData.append("resume", resumeFile, resumeFile.name || defaultFileName);
 
     try {
       const res = await fetch("/api/send", { method: "POST", body: formData });
@@ -759,7 +776,7 @@ export default function Home() {
                   <div className="flex-row" style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div className="flex-gap-2">
                       <span>Attachment:</span>
-                      <span style={{color: "var(--text-primary)"}}>{resumeExists ? (resumeFile?.name || "zain_resume.pdf") : "None"}</span>
+                      <span style={{color: "var(--text-primary)"}}>{resumeExists ? (resumeFile?.name || ((settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf")) : "None"}</span>
                     </div>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
                       <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleTailorResume} disabled={isTailoring}>
@@ -968,7 +985,7 @@ export default function Home() {
               onChange={(e) => setSettings({ ...settings, LATEX_RESUME: e.target.value })}
             />
             <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Provide the LaTeX code for your resume. This will be tailored by Gemini to match job descriptions.
+              Provide the LaTeX code for your resume. You can use placeholders like {"{{USER_NAME}}"}, {"{{USER_PHONE}}"}, {"{{USER_EMAIL}}"}, {"{{USER_LINKEDIN}}"}, {"{{USER_GITHUB}}"}, or {"{{USER_PORTFOLIO}}"} to dynamically insert your profile details. This will be tailored by Gemini to match job descriptions.
             </small>
           </div>
 
