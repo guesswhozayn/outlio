@@ -370,7 +370,7 @@ export default function Home() {
       }
       
       const pdfBlob = await compileRes.blob();
-      const file = new File([pdfBlob], "zain_resume.pdf", { type: "application/pdf" });
+      const file = new window.File([pdfBlob], "zain_resume.pdf", { type: "application/pdf" });
       
       await localforage.setItem("automailer_resume", file);
       setResumeFile(file);
