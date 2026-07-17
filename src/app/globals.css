@@ -172,6 +172,13 @@ h1 {
   .nav-title {
     font-size: 1rem;
   }
+  .card {
+    padding: 1rem;
+  }
+  .settings-drawer {
+    width: 100vw;
+    padding: 1.5rem;
+  }
 }
 
 .dashboard-grid {
@@ -281,13 +288,13 @@ textarea { resize: vertical; min-height: 120px; }
   border: 1px solid var(--glass-border);
 }
 
-.badge-success { color: var(--text-primary); }
-.badge-danger { color: var(--text-muted); border-color: var(--glass-border); }
+
 
 .flex-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .flex-gap-2 { display: flex; align-items: center; gap: 0.5rem; }
 
-.tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 0.5rem; }
+.tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 0.5rem; overflow-x: auto; white-space: nowrap; padding-bottom: 2px; }
+.tabs::-webkit-scrollbar { display: none; }
 
 .tab {
   padding: 0.5rem 0;

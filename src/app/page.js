@@ -1,10 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import localforage from "localforage";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { useTheme } from "next-themes";
-import { Mail, Settings, LogOut, Zap, Image as ImageIcon, File, Send, Sun, Moon } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import JobInput from "@/components/JobInput";
+import SettingsDrawer from "@/components/SettingsDrawer";
+import ExtractedFieldsTab from "@/components/ExtractedFieldsTab";
+import HistoryTab from "@/components/HistoryTab";
+import EmailPreviewTab from "@/components/EmailPreviewTab";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -478,89 +483,30 @@ export default function Home() {
 
   return (
     <div className="app-container">
-      {/* Header */}
-      <header className="floating-nav">
-        <div className="logo-section">
-          <div className="nav-logo">
-            <Mail size={18} className="nav-logo-icon" />
-          </div>
-          <div>
-            <h1 className="nav-title">AutoMailer</h1>
-          </div>
-        </div>
-        <div className="nav-actions">
-          {mounted && (
-            <button
-              className="icon-btn"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              title="Toggle Theme"
-            >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-          )}
-          <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="Settings">
-            <Settings size={18} />
-          </button>
-          <button className="icon-btn" onClick={() => signOut()} title="Sign Out">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </header>
+      <Navbar
+        mounted={mounted}
+        theme={theme}
+        setTheme={setTheme}
+        setSettingsOpen={setSettingsOpen}
+      />
 
-      {/* Main Grid */}
       <div className="dashboard-grid">
-        
-        {/* Left Side: Input */}
-        <div className="card" style={{ height: "100%" }}>
-          <div className="card-header">
-            <div className="card-title">
-              LinkedIn Post / Job Description
-            </div>
-            <span className="char-counter">{postText.length} chars</span>
-          </div>
-          
-          <div className="form-group" style={{ flexGrow: 1 }}>
-            <textarea
-              className="post-input"
-              placeholder="Paste the LinkedIn post description or job listing content here. Our Gemini extractor will pull out the target email, position, skills, and manager details..."
-              value={postText}
-              onChange={(e) => setPostText(e.target.value)}
-            />
-          </div>
-          
-          <div className="status-text" style={{ minHeight: "1rem" }}>
-            {logs.length > 0 && logs[logs.length - 1].message}
-          </div>
-          
-          <div className="flex-row" style={{ marginBottom: "1rem", gap: "1rem", alignItems: "center" }}>
-            <button className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }} onClick={handleImageUploadClick}>
-              <ImageIcon size={14} /> Upload
-            </button>
-            <input type="file" ref={imageInputRef} style={{ display: "none" }} accept="image/*" onChange={handleImageChange} />
-            {screenshotName && <span style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>{screenshotName}</span>}
-            {screenshotName && <button style={{background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer"}} onClick={() => {setScreenshotData(null); setScreenshotName("");}}>✕</button>}
-          </div>
+        <JobInput
+          postText={postText}
+          setPostText={setPostText}
+          logs={logs}
+          handleImageUploadClick={handleImageUploadClick}
+          imageInputRef={imageInputRef}
+          handleImageChange={handleImageChange}
+          screenshotName={screenshotName}
+          setScreenshotData={setScreenshotData}
+          setScreenshotName={setScreenshotName}
+          isParsing={isParsing}
+          screenshotData={screenshotData}
+          handleParsePost={handleParsePost}
+        />
 
-          <button
-            className="btn btn-primary"
-            disabled={isParsing || (!postText.trim() && !screenshotData)}
-            onClick={handleParsePost}
-          >
-            {isParsing ? (
-              <>
-                <div className="spinner"></div> Extracting details...
-              </>
-            ) : (
-              <>
-                <Zap size={16} /> Extract
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Right Side: Review & Editor */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          
           <div className="card" style={{ height: "100%", justifyContent: "flex-start" }}>
             <div className="card-header" style={{ borderBottom: "none", paddingBottom: 0 }}>
               <div className="tabs">
@@ -585,415 +531,64 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Tab content: Extracted Details */}
             {activeTab === "details" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem" }}>
-                
-                <div className="form-group">
-                  <label>HR Recipient Email</label>
-                  <input
-                    type="email"
-                    placeholder="hr-email@company.com"
-                    value={fields.email}
-                    onChange={(e) => setFields({ ...fields, email: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Job Title (Position)</label>
-                  <input
-                    type="text"
-                    placeholder="Software Engineer"
-                    value={fields.jobTitle}
-                    onChange={(e) => setFields({ ...fields, jobTitle: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Company Name</label>
-                  <input
-                    type="text"
-                    placeholder="Acme Corp"
-                    value={fields.company}
-                    onChange={(e) => setFields({ ...fields, company: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Hiring Manager / Team</label>
-                  <input
-                    type="text"
-                    placeholder="Hiring Team / John Doe"
-                    value={fields.recipientName}
-                    onChange={(e) => setFields({ ...fields, recipientName: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Key Technologies / Field</label>
-                  <input
-                    type="text"
-                    placeholder="React, Node.js"
-                    value={fields.skills}
-                    onChange={(e) => setFields({ ...fields, skills: e.target.value })}
-                  />
-                </div>
-              </div>
+              <ExtractedFieldsTab fields={fields} setFields={setFields} />
             )}
 
             {activeTab === "history" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem", flexGrow: 1, overflowY: "auto", maxHeight: "60vh", paddingRight: "0.5rem" }}>
-                {history.length === 0 ? (
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", textAlign: "center", marginTop: "2rem" }}>No applications sent yet.</p>
-                ) : (
-                  history.map((item) => (
-                    <div key={item.id} style={{ padding: "1rem", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-md)", background: "var(--bg-secondary)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
-                      <div style={{ overflow: "hidden" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
-                          <span style={{ fontWeight: 500, color: "var(--text-primary)" }}>{item.company}</span>
-                          <span className="badge" style={{ fontSize: "0.65rem", padding: "0.15rem 0.4rem", background: "var(--bg-primary)", borderColor: "var(--glass-border)" }}>{item.type}</span>
-                        </div>
-                        <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "0.4rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.jobTitle}</div>
-                        <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.15rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.email}</div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{new Date(item.date).toLocaleDateString()}</div>
-                      </div>
-                      <button 
-                        className="btn btn-secondary" 
-                        style={{ fontSize: "0.75rem", padding: "0.4rem 0.75rem", whiteSpace: "nowrap" }}
-                        onClick={() => {
-                          setFields({
-                            email: item.email,
-                            company: item.company,
-                            jobTitle: item.jobTitle,
-                            recipientName: item.recipientName,
-                            skills: ""
-                          });
-                          setIsColdEmail(false);
-                          setIsFollowUp(true);
-                          setActiveTab("preview");
-                        }}
-                      >
-                        Follow Up
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Tab content: Email Preview */}
-            {activeTab === "preview" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem", flexGrow: 1 }}>
-                
-                {isFollowUp && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255, 255, 255, 0.05)", padding: "0.75rem", borderRadius: "var(--radius-md)", marginBottom: "0.5rem" }}>
-                    <span style={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 500 }}>Generating Follow-Up Email</span>
-                    <button className="btn btn-secondary" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => setIsFollowUp(false)}>Cancel Follow-Up</button>
-                  </div>
-                )}
-                
-                {!isFollowUp && (
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "-0.5rem" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                    <div style={{
-                      width: "36px", height: "20px", borderRadius: "20px", background: isColdEmail ? "var(--accent-cyan)" : "var(--glass-border)",
-                      position: "relative", transition: "background 0.3s ease"
-                    }}>
-                      <div style={{
-                        width: "16px", height: "16px", borderRadius: "50%", background: "#fff",
-                        position: "absolute", top: "2px", left: isColdEmail ? "18px" : "2px", transition: "left 0.3s ease",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)"
-                      }} />
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      checked={isColdEmail} 
-                      onChange={(e) => setIsColdEmail(e.target.checked)} 
-                      style={{ display: "none" }}
-                    />
-                    Cold Email
-                  </label>
-                </div>
-                )}
-
-                {isColdEmail && (
-                  <div className="form-group">
-                    <label>Tailor Template</label>
-                    <select
-                      style={{
-                        background: "var(--bg-secondary)",
-                        border: "1px solid var(--glass-border)",
-                        borderRadius: "var(--radius-md)",
-                        padding: "0.5rem",
-                        color: "var(--text-primary)",
-                        fontFamily: "var(--font-body)",
-                        fontSize: "0.9rem",
-                        outline: "none",
-                        cursor: "pointer"
-                      }}
-                      value={coldEmailRole}
-                      onChange={(e) => setColdEmailRole(e.target.value)}
-                    >
-                      <option value="General">General</option>
-                      <option value="Frontend">Frontend Development</option>
-                      <option value="Backend">Backend Development</option>
-                      <option value="Full Stack">Full Stack Development</option>
-                      <option value="Software Engineer">Software Engineering</option>
-                    </select>
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label>To</label>
-                  <input
-                    type="email"
-                    placeholder="hr-email@company.com"
-                    value={fields.email}
-                    onChange={(e) => setFields({ ...fields, email: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Subject</label>
-                  <input
-                    type="text"
-                    placeholder="Email Subject Line"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group" style={{ flexGrow: 1 }}>
-                  <label>Email Body</label>
-                  <textarea
-                    style={{ flexGrow: 1, minHeight: "350px", fontFamily: "inherit" }}
-                    value={emailBody}
-                    onChange={(e) => setEmailBody(e.target.value)}
-                  />
-                </div>
-
-                <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  <div className="flex-row" style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div className="flex-gap-2">
-                      <span>Attachment:</span>
-                      <span style={{color: "var(--text-primary)"}}>{resumeExists ? (resumeFile?.name || ((settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf")) : "None"}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleTailorResume} disabled={isTailoring}>
-                        {isTailoring ? "Tailoring..." : <><Zap size={12} /> Tailor Resume</>}
-                      </button>
-                      <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleUploadClick}>
-                        {isUploading ? "Uploading..." : <><File size={12} /> Upload</>}
-                      </button>
-                    </div>
-                    <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".pdf" onChange={handleFileChange} />
-                  </div>
-                  
-                  <button
-                    className="btn btn-success"
-                    disabled={isSending || !fields.email || !resumeExists || !hasGmailConfig}
-                    onClick={handleSendEmail}
-                  >
-                    {isSending ? (
-                      <>
-                        <div className="spinner"></div> Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={16} /> Send
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Settings Drawer */}
-      <div className={`overlay ${settingsOpen ? "active" : ""}`} onClick={() => setSettingsOpen(false)}></div>
-      
-      <div className={`settings-drawer ${settingsOpen ? "open" : ""}`}>
-        <div className="drawer-header">
-          <h2>Configuration Settings</h2>
-          <button className="close-btn" onClick={() => setSettingsOpen(false)}>×</button>
-        </div>
-
-        <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          
-          <div className="form-group">
-            <label>Gemini API Key</label>
-            <input
-              type="password"
-              placeholder={hasGeminiKey ? "••••••••••••••••••••" : "Paste Gemini API Key"}
-              value={settings.GEMINI_API_KEY}
-              onChange={(e) => setSettings({ ...settings, GEMINI_API_KEY: e.target.value })}
-            />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              API key to power the LinkedIn post parsing capabilities.
-            </small>
-          </div>
-
-          <div className="form-group">
-            <label>Gemini Model {isFetchingModels && <span style={{ fontSize: "0.75rem", color: "var(--accent-cyan)" }}>(loading...)</span>}</label>
-            <select
-              style={{
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--glass-border)",
-                borderRadius: "var(--radius-md)",
-                padding: "0.75rem 1rem",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-body)",
-                fontSize: "0.95rem",
-                outline: "none",
-                cursor: "pointer"
-              }}
-              value={["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash"].includes(settings.GEMINI_MODEL) || availableModels.some(m => m.name === settings.GEMINI_MODEL) ? settings.GEMINI_MODEL : "custom"}
-              onChange={(e) => {
-                if (e.target.value === "custom") {
-                  setSettings({ ...settings, GEMINI_MODEL: "gemini-3.5-flash" }); // Default custom model
-                } else {
-                  setSettings({ ...settings, GEMINI_MODEL: e.target.value });
-                }
-              }}
-            >
-              {availableModels.length > 0 ? (
-                availableModels.map(m => (
-                  <option key={m.name} value={m.name}>{m.displayName}</option>
-                ))
-              ) : (
-                <>
-                  <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                </>
-              )}
-              <option value="custom">Custom Model...</option>
-            </select>
-            
-            {(!["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash"].includes(settings.GEMINI_MODEL) && 
-              !availableModels.some(m => m.name === settings.GEMINI_MODEL)) && (
-              <input
-                type="text"
-                placeholder="Enter custom model identifier"
-                value={settings.GEMINI_MODEL}
-                onChange={(e) => setSettings({ ...settings, GEMINI_MODEL: e.target.value })}
-                style={{ marginTop: "0.5rem" }}
+              <HistoryTab
+                history={history}
+                setFields={setFields}
+                setIsColdEmail={setIsColdEmail}
+                setIsFollowUp={setIsFollowUp}
+                setActiveTab={setActiveTab}
               />
             )}
-            
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Select which Gemini model version to use for parsing.
-            </small>
+
+            {activeTab === "preview" && (
+              <EmailPreviewTab
+                isFollowUp={isFollowUp}
+                setIsFollowUp={setIsFollowUp}
+                isColdEmail={isColdEmail}
+                setIsColdEmail={setIsColdEmail}
+                coldEmailRole={coldEmailRole}
+                setColdEmailRole={setColdEmailRole}
+                fields={fields}
+                setFields={setFields}
+                subject={subject}
+                setSubject={setSubject}
+                emailBody={emailBody}
+                setEmailBody={setEmailBody}
+                resumeExists={resumeExists}
+                resumeFile={resumeFile}
+                settings={settings}
+                handleTailorResume={handleTailorResume}
+                isTailoring={isTailoring}
+                handleUploadClick={handleUploadClick}
+                isUploading={isUploading}
+                fileInputRef={fileInputRef}
+                handleFileChange={handleFileChange}
+                isSending={isSending}
+                hasGmailConfig={hasGmailConfig}
+                handleSendEmail={handleSendEmail}
+              />
+            )}
           </div>
-
-          <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)" }} />
-
-          <div className="form-group">
-            <label>Gmail Address</label>
-            <input
-              type="email"
-              placeholder="your-email@gmail.com"
-              value={settings.GMAIL_USER}
-              onChange={(e) => setSettings({ ...settings, GMAIL_USER: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Gmail App Password</label>
-            <input
-              type="password"
-              placeholder={hasGmailConfig ? "••••••••••••••••••••" : "Paste Gmail App Password"}
-              value={settings.GMAIL_APP_PASSWORD}
-              onChange={(e) => setSettings({ ...settings, GMAIL_APP_PASSWORD: e.target.value })}
-            />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Must be a 16-character Google App Password. Normal password will fail.
-            </small>
-          </div>
-
-          <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)" }} />
-
-          <h3>User Signature Profile</h3>
-
-          <div className="form-group">
-            <label>Your Full Name</label>
-            <input
-              type="text"
-              placeholder="John Doe"
-              value={settings.USER_NAME}
-              onChange={(e) => setSettings({ ...settings, USER_NAME: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Phone Number</label>
-            <input
-              type="text"
-              placeholder="+1 (555) 019-2834"
-              value={settings.USER_PHONE}
-              onChange={(e) => setSettings({ ...settings, USER_PHONE: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>LinkedIn Profile URL</label>
-            <input
-              type="text"
-              placeholder="linkedin.com/in/username"
-              value={settings.USER_LINKEDIN}
-              onChange={(e) => setSettings({ ...settings, USER_LINKEDIN: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>GitHub Profile URL</label>
-            <input
-              type="text"
-              placeholder="github.com/username"
-              value={settings.USER_GITHUB}
-              onChange={(e) => setSettings({ ...settings, USER_GITHUB: e.target.value })}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Portfolio Website</label>
-            <input
-              type="text"
-              placeholder="yourportfolio.com"
-              value={settings.USER_PORTFOLIO}
-              onChange={(e) => setSettings({ ...settings, USER_PORTFOLIO: e.target.value })}
-            />
-          </div>
-
-          <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", marginTop: "1rem", marginBottom: "0.5rem" }} />
-          
-          <h3>Resume Configuration</h3>
-
-          <div className="form-group">
-            <label>Base LaTeX Resume Code</label>
-            <textarea
-              style={{ flexGrow: 1, minHeight: "150px", fontFamily: "var(--font-mono)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: "0.85rem" }}
-              placeholder="\documentclass{article}..."
-              value={settings.LATEX_RESUME}
-              onChange={(e) => setSettings({ ...settings, LATEX_RESUME: e.target.value })}
-            />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Provide the LaTeX code for your resume. You can use placeholders like {"{{USER_NAME}}"}, {"{{USER_PHONE}}"}, {"{{USER_EMAIL}}"}, {"{{USER_LINKEDIN}}"}, {"{{USER_GITHUB}}"}, or {"{{USER_PORTFOLIO}}"} to dynamically insert your profile details. This will be tailored by Gemini to match job descriptions.
-            </small>
-          </div>
-
-          <button type="submit" className="btn btn-primary" style={{ marginTop: "1rem" }} disabled={isSavingSettings}>
-            {isSavingSettings ? "Saving Settings..." : "Save Settings"}
-          </button>
-        </form>
+        </div>
       </div>
+
+      <SettingsDrawer
+        settingsOpen={settingsOpen}
+        setSettingsOpen={setSettingsOpen}
+        settings={settings}
+        setSettings={setSettings}
+        hasGeminiKey={hasGeminiKey}
+        isFetchingModels={isFetchingModels}
+        availableModels={availableModels}
+        hasGmailConfig={hasGmailConfig}
+        isSavingSettings={isSavingSettings}
+        handleSaveSettings={handleSaveSettings}
+      />
     </div>
   );
 }
