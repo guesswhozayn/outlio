@@ -21,7 +21,7 @@ export default function Home() {
   const [settings, setSettings] = useState({
     GEMINI_API_KEY: "", GEMINI_MODEL: "gemini-3.5-flash",
     GMAIL_USER: "", GMAIL_APP_PASSWORD: "",
-    USER_NAME: "", USER_PHONE: "", USER_LINKEDIN: "", USER_GITHUB: "", USER_PORTFOLIO: "",
+    USER_NAME: "", USER_PHONE: "", USER_LINKEDIN: "", USER_GITHUB: "", USER_PORTFOLIO: "", LATEX_RESUME: "",
   });
 
   const [activeTab, setActiveTab] = useState("preview");
@@ -37,6 +37,7 @@ export default function Home() {
   const [isParsing, setIsParsing] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isTailoring, setIsTailoring] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [availableModels, setAvailableModels] = useState([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
@@ -332,6 +333,57 @@ export default function Home() {
     }
   };
 
+  const handleTailorResume = async () => {
+    if (!settings.LATEX_RESUME) {
+      addLog("Please provide a base LaTeX resume in settings first.", "error");
+      return;
+    }
+    
+    setIsTailoring(true);
+    addLog("Tailoring resume with Gemini...", "info");
+    
+    try {
+      const tailorRes = await fetch("/api/tailor-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          latexCode: settings.LATEX_RESUME,
+          jobDescription: postText || fields.skills || "Software Engineering Role",
+          userApiKey: settings.GEMINI_API_KEY,
+          userModel: settings.GEMINI_MODEL
+        })
+      });
+      const tailorData = await tailorRes.json();
+      if (!tailorRes.ok) throw new Error(tailorData.error || "Failed to tailor resume");
+      
+      addLog("Compiling LaTeX to PDF...", "info");
+      
+      const compileRes = await fetch("/api/compile-latex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latexCode: tailorData.latex })
+      });
+      
+      if (!compileRes.ok) {
+        const errorData = await compileRes.json();
+        throw new Error(errorData.error || "Failed to compile PDF");
+      }
+      
+      const pdfBlob = await compileRes.blob();
+      const file = new File([pdfBlob], "zain_resume.pdf", { type: "application/pdf" });
+      
+      await localforage.setItem("automailer_resume", file);
+      setResumeFile(file);
+      setResumeExists(true);
+      addLog("Tailored resume generated and attached successfully!", "success");
+      
+    } catch (error) {
+      addLog(`Error tailoring resume: ${error.message}`, "error");
+    } finally {
+      setIsTailoring(false);
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!fields.email || !resumeExists || !hasGmailConfig) return;
     setIsSending(true);
@@ -362,6 +414,16 @@ export default function Home() {
         const updatedHistory = [newEntry, ...history];
         setHistory(updatedHistory);
         localforage.setItem("automailer_history", updatedHistory).catch(console.warn);
+
+        // Cleanup after successful send
+        setResumeFile(null);
+        setResumeExists(false);
+        localforage.removeItem("automailer_resume").catch(console.warn);
+        setPostText("");
+        setScreenshotData(null);
+        setScreenshotName("");
+        setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "" });
+        addLog("Form and attachments cleared for next application.", "info");
       } else {
         addLog(`Send failed: ${data.error}`, "error");
       }
@@ -694,14 +756,19 @@ export default function Home() {
                 </div>
 
                 <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  <div className="flex-row" style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                  <div className="flex-row" style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div className="flex-gap-2">
                       <span>Attachment:</span>
-                      <span style={{color: "var(--text-primary)"}}>{resumeExists ? "resume.pdf" : "None"}</span>
+                      <span style={{color: "var(--text-primary)"}}>{resumeExists ? (resumeFile?.name || "zain_resume.pdf") : "None"}</span>
                     </div>
-                    <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleUploadClick}>
-                      {isUploading ? "Uploading..." : <><File size={12} /> Upload</>}
-                    </button>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleTailorResume} disabled={isTailoring}>
+                        {isTailoring ? "Tailoring..." : <><Zap size={12} /> Tailor Resume</>}
+                      </button>
+                      <button className="btn btn-secondary" style={{padding: "0.25rem 0.5rem", fontSize: "0.75rem"}} onClick={handleUploadClick}>
+                        {isUploading ? "Uploading..." : <><File size={12} /> Upload</>}
+                      </button>
+                    </div>
                     <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".pdf" onChange={handleFileChange} />
                   </div>
                   
@@ -886,6 +953,23 @@ export default function Home() {
               value={settings.USER_PORTFOLIO}
               onChange={(e) => setSettings({ ...settings, USER_PORTFOLIO: e.target.value })}
             />
+          </div>
+
+          <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", marginTop: "1rem", marginBottom: "0.5rem" }} />
+          
+          <h3>Resume Configuration</h3>
+
+          <div className="form-group">
+            <label>Base LaTeX Resume Code</label>
+            <textarea
+              style={{ flexGrow: 1, minHeight: "150px", fontFamily: "var(--font-mono)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+              placeholder="\documentclass{article}..."
+              value={settings.LATEX_RESUME}
+              onChange={(e) => setSettings({ ...settings, LATEX_RESUME: e.target.value })}
+            />
+            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+              Provide the LaTeX code for your resume. This will be tailored by Gemini to match job descriptions.
+            </small>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ marginTop: "1rem" }} disabled={isSavingSettings}>
