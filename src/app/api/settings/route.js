@@ -2,8 +2,41 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { kv } from '@vercel/kv';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
+
+const isLocal = !process.env.KV_REST_API_URL;
+const LOCAL_KV_PATH = path.join(process.cwd(), 'local_kv.json');
+
+async function getLocalSettings(email) {
+  try {
+    if (!fs.existsSync(LOCAL_KV_PATH)) {
+      return null;
+    }
+    const data = fs.readFileSync(LOCAL_KV_PATH, 'utf8');
+    const parsed = JSON.parse(data);
+    return parsed[`settings:${email}`] || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function setLocalSettings(email, settings) {
+  let data = {};
+  try {
+    if (fs.existsSync(LOCAL_KV_PATH)) {
+      const fileData = fs.readFileSync(LOCAL_KV_PATH, 'utf8');
+      data = JSON.parse(fileData);
+    }
+  } catch (error) {
+    // Ignore read errors, just overwrite
+  }
+  
+  data[`settings:${email}`] = settings;
+  fs.writeFileSync(LOCAL_KV_PATH, JSON.stringify(data, null, 2));
+}
 
 export async function GET() {
   try {
@@ -13,7 +46,13 @@ export async function GET() {
     }
 
     const email = session.user.email;
-    const settings = await kv.get(`settings:${email}`);
+    let settings;
+    
+    if (isLocal) {
+      settings = await getLocalSettings(email);
+    } else {
+      settings = await kv.get(`settings:${email}`);
+    }
 
     return NextResponse.json(settings || {});
   } catch (error) {
@@ -31,7 +70,11 @@ export async function POST(req) {
     const email = session.user.email;
     const data = await req.json();
 
-    await kv.set(`settings:${email}`, data);
+    if (isLocal) {
+      await setLocalSettings(email, data);
+    } else {
+      await kv.set(`settings:${email}`, data);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
