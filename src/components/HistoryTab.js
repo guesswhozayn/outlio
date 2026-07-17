@@ -1,4 +1,4 @@
-export default function HistoryTab({ history, setFields, setIsColdEmail, setIsFollowUp, setActiveTab }) {
+export default function HistoryTab({ history, setFields, setIsColdEmail, setIsFollowUp, setActiveTab, setIsManuallyEdited }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem", flexGrow: 1, overflowY: "auto", maxHeight: "60vh", paddingRight: "0.5rem" }}>
       {history.length === 0 ? (
@@ -28,6 +28,7 @@ export default function HistoryTab({ history, setFields, setIsColdEmail, setIsFo
                 });
                 setIsColdEmail(false);
                 setIsFollowUp(true);
+                setIsManuallyEdited(false);
                 setActiveTab("preview");
               }}
             >
