@@ -1,0 +1,40 @@
+import { NextResponse } from 'next/server';
+
+export async function POST(req) {
+  try {
+    const { latexCode } = await req.json();
+
+    if (!latexCode) {
+      return NextResponse.json({ error: "No LaTeX code provided." }, { status: 400 });
+    }
+
+    const formData = new FormData();
+    formData.append('compiler', 'pdflatex');
+    // Using a Blob to simulate a file upload in FormData
+    const blob = new Blob([latexCode], { type: 'application/x-tex' });
+    formData.append('file', blob, 'resume.tex');
+
+    const res = await fetch('https://latex.ytotech.com/builds/sync', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      return NextResponse.json({ error: `Failed to compile PDF: ${errorText}` }, { status: res.status });
+    }
+
+    const arrayBuffer = await res.arrayBuffer();
+    
+    return new NextResponse(arrayBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="zain_resume.pdf"',
+      },
+    });
+
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
