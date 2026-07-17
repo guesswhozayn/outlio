@@ -10,6 +10,7 @@ export async function POST(req) {
     const gmailUser = formData.get('gmailUser');
     const gmailAppPassword = formData.get('gmailAppPassword');
     const resumeFile = formData.get('resume');
+    const userName = formData.get('userName');
 
     if (!toEmail || !subject || !emailBody) {
       return NextResponse.json({ error: "Missing required email fields." }, { status: 400 });
@@ -36,9 +37,10 @@ export async function POST(req) {
 
     if (resumeFile && resumeFile.size > 0) {
       const buffer = Buffer.from(await resumeFile.arrayBuffer());
+      const formattedName = (userName || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
       mailOptions.attachments = [
         {
-          filename: resumeFile.name || "Resume.pdf",
+          filename: resumeFile.name || formattedName,
           content: buffer,
         },
       ];
