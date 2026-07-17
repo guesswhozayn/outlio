@@ -13,6 +13,7 @@ export default function EmailPreviewTab({
   setSubject,
   emailBody,
   setEmailBody,
+  setIsManuallyEdited,
   resumeExists,
   resumeFile,
   settings,
@@ -31,7 +32,7 @@ export default function EmailPreviewTab({
       {isFollowUp && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255, 255, 255, 0.05)", padding: "0.75rem", borderRadius: "var(--radius-md)", marginBottom: "0.5rem" }}>
           <span style={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 500 }}>Generating Follow-Up Email</span>
-          <button className="btn btn-secondary" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => setIsFollowUp(false)}>Cancel Follow-Up</button>
+          <button className="btn btn-secondary" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => { setIsFollowUp(false); setIsManuallyEdited(false); }}>Cancel Follow-Up</button>
         </div>
       )}
       
@@ -51,7 +52,7 @@ export default function EmailPreviewTab({
             <input 
               type="checkbox" 
               checked={isColdEmail} 
-              onChange={(e) => setIsColdEmail(e.target.checked)} 
+              onChange={(e) => { setIsColdEmail(e.target.checked); setIsManuallyEdited(false); }} 
               style={{ display: "none" }}
             />
             Cold Email
@@ -75,7 +76,7 @@ export default function EmailPreviewTab({
               cursor: "pointer"
             }}
             value={coldEmailRole}
-            onChange={(e) => setColdEmailRole(e.target.value)}
+            onChange={(e) => { setColdEmailRole(e.target.value); setIsManuallyEdited(false); }}
           >
             <option value="General">General</option>
             <option value="Frontend">Frontend Development</option>
@@ -102,7 +103,7 @@ export default function EmailPreviewTab({
           type="text"
           placeholder="Email Subject Line"
           value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          onChange={(e) => { setSubject(e.target.value); setIsManuallyEdited(true); }}
         />
       </div>
 
@@ -111,7 +112,7 @@ export default function EmailPreviewTab({
         <textarea
           style={{ flexGrow: 1, minHeight: "350px", fontFamily: "inherit" }}
           value={emailBody}
-          onChange={(e) => setEmailBody(e.target.value)}
+          onChange={(e) => { setEmailBody(e.target.value); setIsManuallyEdited(true); }}
         />
       </div>
 
