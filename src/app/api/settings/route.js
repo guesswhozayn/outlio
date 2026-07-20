@@ -8,7 +8,17 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 
 const isLocal = !process.env.KV_REST_API_URL;
-const LOCAL_KV_PATH = path.join(process.cwd(), 'local_kv.json');
+
+const getLocalKvPath = () => {
+  try {
+    fs.accessSync(process.cwd(), fs.constants.W_OK);
+    return path.join(process.cwd(), 'local_kv.json');
+  } catch (e) {
+    return path.join('/tmp', 'local_kv.json');
+  }
+};
+
+const LOCAL_KV_PATH = getLocalKvPath();
 
 async function getLocalSettings(email) {
   try {

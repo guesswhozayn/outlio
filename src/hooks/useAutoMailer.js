@@ -7,7 +7,7 @@ export function useAutoMailer() {
   const [mounted, setMounted] = useState(false);
   const [postText, setPostText] = useState("");
   const [fields, setFields] = useState({
-    email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "",
+    email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "",
   });
   const [userProfile, setUserProfile] = useState({ name: "", phone: "", linkedin: "", github: "", portfolio: "" });
   const [subject, setSubject] = useState("");
@@ -323,6 +323,7 @@ export function useAutoMailer() {
         setFields({
           email: data.email || "", company: data.company || "", jobTitle: data.jobTitle || "",
           recipientName: data.recipientName || "Hiring Team", skills: data.skills || "",
+          comprehensiveSkills: data.comprehensiveSkills || "",
         });
         setIsFollowUp(false);
         setIsManuallyEdited(false);
@@ -367,7 +368,7 @@ export function useAutoMailer() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           latexCode: tailoredLatexTemplate,
-          jobDescription: postText || fields.skills || "Software Engineering Role",
+          jobDescription: postText || fields.comprehensiveSkills || fields.skills || "Software Engineering Role",
           userApiKey: settings.GEMINI_API_KEY,
           userModel: settings.GEMINI_MODEL
         })
@@ -451,7 +452,7 @@ export function useAutoMailer() {
         setPostText("");
         setScreenshotData(null);
         setScreenshotName("");
-        setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "" });
+        setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "" });
         addLog("Form and attachments cleared for next application.", "info");
       } else {
         addLog(`Send failed: ${data.error}`, "error");
