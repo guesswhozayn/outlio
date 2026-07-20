@@ -46,6 +46,16 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
           onChange={(e) => setFields({ ...fields, skills: e.target.value })}
         />
       </div>
+      <div className="form-group">
+        <label>Comprehensive Skills</label>
+        <textarea
+          placeholder="React, Node.js, Frontend Architecture, UI/UX..."
+          value={fields.comprehensiveSkills}
+          onChange={(e) => setFields({ ...fields, comprehensiveSkills: e.target.value })}
+          rows={3}
+          style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--border-color)", background: "var(--input-bg)", color: "var(--text-primary)", resize: "vertical" }}
+        />
+      </div>
     </div>
   );
 }
