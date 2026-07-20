@@ -18,6 +18,7 @@ Analyze the following LinkedIn post or job description. Extract the following in
 4. Hiring Manager's Name or Team Name (e.g. "John Doe", "Hiring Team", or "Talent Acquisition Team" - default to "Hiring Team" if not specified).
 5. The core technologies, programming languages, or domains mentioned (e.g. "React, Node.js, MERN stack" or "Python, data analysis").
 6. The key skills or requirements (short list of main qualifications).
+7. A comprehensive list of skills and technologies. This should include ALL extracted skills, plus other highly relevant skills and technologies that are typically associated with this role or the extracted skills. This provides broader context for resume tailoring.
 
 Return the result as a raw JSON object matching this schema:
 {
@@ -26,6 +27,7 @@ Return the result as a raw JSON object matching this schema:
   "jobTitle": string or null,
   "recipientName": string,
   "skills": string, // comma-separated list of 2-4 key tech/domains
+  "comprehensiveSkills": string, // comprehensive comma-separated list of extracted and inferred relevant skills
   "keyRequirements": string[] // list of key requirements
 }
 
