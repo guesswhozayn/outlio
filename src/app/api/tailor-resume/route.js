@@ -19,7 +19,14 @@ I will provide you with a base LaTeX resume and a job description.
 Your task is to tailor the LaTeX resume to perfectly match the job description.
 You should emphasize skills and experiences that align with the requirements, and perhaps adjust the summary or bullet points slightly to make the candidate look like a perfect fit, without making up fake experiences (just reframe existing ones).
 Crucially, if the resume includes a headline, professional title, or role beneath the candidate's name (e.g., "Software Engineer", "Frontend Developer"), update this title to the best matching option based on the job description so it directly mirrors the role they are applying for.
-Ensure the output is strictly valid LaTeX code that can be compiled with pdflatex.
+
+CRITICAL REQUIREMENTS FOR LATEX:
+1. DO NOT change ANY LaTeX document structure, preamble, styling, or formatting commands.
+2. DO NOT add, remove, or modify the layout, margins, spacing, or structural environment names (e.g., itemize, resumeItem, cvsection).
+3. ONLY modify the plain text content within bullet points, summaries, or the professional title.
+4. Keep the exact same number of bullet points unless absolutely necessary.
+5. Ensure the output is strictly valid LaTeX code that can be compiled with pdflatex.
+
 Return ONLY the raw LaTeX code. Do not include markdown formatting like \`\`\`latex or any conversational text.
 
 Job Description:
