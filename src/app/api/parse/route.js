@@ -47,6 +47,7 @@ ${postText || "(See attached image)"}
     const maxRetries = 2;
     let attempt = 0;
     const genAI = new GoogleGenerativeAI(userApiKey);
+    const modelName = userModel || "gemini-3.5-flash";
 
     while (attempt <= maxRetries) {
       try {
