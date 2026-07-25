@@ -7,12 +7,13 @@ export function useAutoMailer() {
   const [mounted, setMounted] = useState(false);
   const [postText, setPostText] = useState("");
   const [fields, setFields] = useState({
-    email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "",
+    email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [],
   });
   const [userProfile, setUserProfile] = useState({ name: "", phone: "", linkedin: "", github: "", portfolio: "" });
   const [subject, setSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
+  const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
 
   const [settings, setSettings] = useState({
     GEMINI_API_KEY: "", GEMINI_MODEL: "gemini-3.5-flash",
@@ -159,13 +160,13 @@ export function useAutoMailer() {
     if (isManuallyEdited) return;
 
     const pTitle = fields.jobTitle || "[Position Title]";
-    
     const pSkills = fields.skills || "[your field/technology/domain]";
+    const cName = fields.company ? fields.company : "your company";
 
     const uName = userProfile.name || "[Your Name]";
     const uPhone = fields.userPhone || userProfile.phone || "[Phone Number]";
     const uLink = fields.userLinkedin || userProfile.linkedin || "[LinkedIn Profile]";
-    const uGithub = userProfile.github ? `\n${userProfile.github}` : "\n[GitHub Profile]";
+    const uGithub = userProfile.github ? `\n${userProfile.github}` : "";
     const uPortfolio = userProfile.portfolio ? `\n${userProfile.portfolio}` : "";
     
     let salutation = "Dear Hiring Team,";
@@ -173,43 +174,57 @@ export function useAutoMailer() {
       salutation = `Dear ${fields.recipientName},`;
     }
 
+    const reqs = Array.isArray(fields.keyRequirements) && fields.keyRequirements.length > 0
+      ? fields.keyRequirements
+      : (typeof fields.keyRequirements === 'string' && fields.keyRequirements.trim() 
+          ? fields.keyRequirements.split('\n').filter(Boolean) 
+          : []);
+
     let body = "";
     let sub = "";
 
     if (isFollowUp) {
-      body = `${salutation}\n\nI'm writing to follow up on my application for the ${pTitle} role${fields.company ? ` at ${fields.company}` : ''}. I remain very interested in the opportunity to join your team and would love to know if there are any updates regarding the hiring process.\n\nPlease let me know if you need any additional information or work samples from my end. I've re-attached my resume for your convenience.\n\nThank you again for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      body = `${salutation}\n\nI am writing to follow up on my application for the ${pTitle} role at ${cName}. I remain very enthusiastic about joining your team and contributing my expertise in ${pSkills}.\n\nPlease let me know if you need any additional information or work samples from my end. I have re-attached my resume for your convenience.\n\nThank you again for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Following up - Application for ${pTitle} - ${uName}`;
     } else if (isColdEmail) {
       let roleText = pTitle !== "[Position Title]" ? pTitle : "Software Developer";
-      let contributionText = "leverage my skills to contribute to your company's goals and learn from your experts";
-      
+      let contributionText = "leverage my skills to contribute to your engineering goals";
       let coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "relevant technologies";
 
       if (coldEmailRole === "Frontend") {
          roleText = "Frontend Developer";
-         contributionText = "help build engaging, responsive user interfaces and learn from your engineering team";
-         coldEmailSkills = "JavaScript, TypeScript, React, Next.js, and TailwindCSS";
+         contributionText = "help build engaging, responsive user interfaces and deliver seamless web applications";
+         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "JavaScript, TypeScript, React, Next.js, and CSS";
       } else if (coldEmailRole === "Backend") {
          roleText = "Backend Developer";
-         contributionText = "help build scalable, robust server-side architecture and learn from your engineering team";
-         coldEmailSkills = "Node.js, Python, SQL, REST/GraphQL APIs, PostgreSQL, MongoDB, and Docker";
+         contributionText = "help build scalable server-side architecture, APIs, and data pipelines";
+         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "Node.js, Python, SQL, REST/GraphQL APIs, and Docker";
       } else if (coldEmailRole === "Full Stack") {
          roleText = "Full Stack Developer";
-         contributionText = "contribute across the stack to deliver end-to-end features and learn from your engineering team";
-         coldEmailSkills = "TypeScript, React, Next.js, Node.js, PostgreSQL, MongoDB, and Docker";
+         contributionText = "contribute across the full stack to build end-to-end features and scalable solutions";
+         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "TypeScript, React, Next.js, Node.js, and modern databases";
       } else if (coldEmailRole === "Software Engineer") {
          roleText = "Software Engineer";
-         contributionText = "help build robust, scalable applications and solve complex problems with your engineering team";
-         coldEmailSkills = "JavaScript, TypeScript, Python, C++, SQL, Node.js, and Docker";
+         contributionText = "help build robust, scalable applications and solve complex technical problems";
+         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "JavaScript, TypeScript, Python, SQL, and cloud platforms";
       }
 
-      const cName = fields.company ? fields.company : "your company";
+      let reqSection = "";
+      if (reqs.length > 0) {
+        reqSection = `\n\nI bring strong hands-on experience in key areas relevant to this role, including:\n` + reqs.map(r => `• ${r.replace(/^[•\-\*]\s*/, '')}`).join("\n");
+      }
 
-      body = `${salutation}\n\nI am writing to express my interest in any potential intern or junior ${roleText} roles at ${cName}. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.\n\nI have attached my resume for your review. I would love the opportunity to briefly connect or discuss any upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
-      sub = `Application for Intern/Junior ${roleText} - ${uName}`;
+      body = `${salutation}\n\nI am writing to express my strong interest in potential ${roleText} roles at ${cName}. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.${reqSection}\n\nI have attached my resume for your review. I would love the opportunity to briefly connect to discuss any current or upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      sub = `Application for ${roleText} Role - ${uName}`;
     } else {
-      const cName = fields.company ? fields.company : "your company";
-      body = `${salutation}\n\nI am interested in the ${pTitle} role at ${cName}. I have experience in ${pSkills} and believe my skills align well with the requirements.\n\nPlease find my resume attached for your review. I would appreciate the opportunity to discuss how I can contribute to your team.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      let reqSection = "";
+      if (reqs.length > 0) {
+        reqSection = `\n\nMy background directly aligns with the key requirements of this position:\n` + reqs.map(r => `• ${r.replace(/^[•\-\*]\s*/, '')}`).join("\n");
+      } else if (fields.comprehensiveSkills) {
+        reqSection = `\n\nMy technical expertise spans ${fields.comprehensiveSkills}, matching the core qualifications outlined in your job posting.`;
+      }
+
+      body = `${salutation}\n\nI am writing to express my strong interest in the ${pTitle} position at ${cName}. Having worked extensively with ${pSkills}, I am confident in my ability to bring immediate value to your team.${reqSection}\n\nI have attached my resume for your review. I would welcome the opportunity to discuss how my background and technical skills align with your team's goals.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Application for ${pTitle} - ${uName}`;
     }
 
@@ -324,6 +339,7 @@ export function useAutoMailer() {
           email: data.email || "", company: data.company || "", jobTitle: data.jobTitle || "",
           recipientName: data.recipientName || "Hiring Team", skills: data.skills || "",
           comprehensiveSkills: data.comprehensiveSkills || "",
+          keyRequirements: Array.isArray(data.keyRequirements) ? data.keyRequirements : (data.keyRequirements ? [data.keyRequirements] : []),
         });
         setIsFollowUp(false);
         setIsManuallyEdited(false);
@@ -336,6 +352,44 @@ export function useAutoMailer() {
       addLog(`Error: ${error.message}`, "error");
     } finally {
       setIsParsing(false);
+    }
+  };
+
+  const handleGenerateAIEmail = async () => {
+    if (!settings.GEMINI_API_KEY) {
+      addLog("Gemini API key is required to generate AI email.", "error");
+      return;
+    }
+    setIsGeneratingEmail(true);
+    addLog("Generating AI email tailored to job description...", "info");
+    try {
+      const res = await fetch("/api/generate-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postText,
+          fields,
+          userProfile,
+          isFollowUp,
+          isColdEmail,
+          coldEmailRole,
+          userApiKey: settings.GEMINI_API_KEY,
+          userModel: settings.GEMINI_MODEL
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSubject(data.subject || subject);
+        setEmailBody(data.body || emailBody);
+        setIsManuallyEdited(true);
+        addLog("AI email generated successfully!", "success");
+      } else {
+        addLog(`Error generating email: ${data.error}`, "error");
+      }
+    } catch (err) {
+      addLog(`Error generating email: ${err.message}`, "error");
+    } finally {
+      setIsGeneratingEmail(false);
     }
   };
 
@@ -452,7 +506,7 @@ export function useAutoMailer() {
         setPostText("");
         setScreenshotData(null);
         setScreenshotName("");
-        setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "" });
+        setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [] });
         addLog("Form and attachments cleared for next application.", "info");
       } else {
         addLog(`Send failed: ${data.error}`, "error");
@@ -474,6 +528,7 @@ export function useAutoMailer() {
     subject, setSubject,
     emailBody, setEmailBody,
     isManuallyEdited, setIsManuallyEdited,
+    isGeneratingEmail, setIsGeneratingEmail,
     settings, setSettings,
     activeTab, setActiveTab,
     history, setHistory,
@@ -498,6 +553,6 @@ export function useAutoMailer() {
     screenshotName, setScreenshotName,
     handleImageUploadClick, handleImageChange, handleParsePost,
     handleUploadClick, handleFileChange, handleTailorResume, handleSendEmail,
-    handleSaveSettings,
+    handleSaveSettings, handleGenerateAIEmail,
   };
 }

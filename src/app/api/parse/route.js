@@ -9,7 +9,6 @@ export async function POST(req) {
       return NextResponse.json({ error: "Gemini API Key is not configured." }, { status: 400 });
     }
 
-    const modelName = userModel || "gemini-3.5-flash";
     const prompt = `
 Analyze the following LinkedIn post or job description. Extract the following information:
 1. HR Email Address (or the email specified to send applications to). If multiple are found, list the primary one. If none are found, return null.
@@ -19,6 +18,7 @@ Analyze the following LinkedIn post or job description. Extract the following in
 5. The core technologies, programming languages, or domains mentioned (e.g. "React, Node.js, MERN stack" or "Python, data analysis").
 6. The key skills or requirements (short list of main qualifications).
 7. A comprehensive list of skills and technologies. This should include ALL extracted skills, plus other highly relevant skills and technologies that are typically associated with this role or the extracted skills. This provides broader context for resume tailoring.
+8. Key Requirements & Responsibilities: Extract 2-4 key qualifications, requirements, or responsibilities mentioned in the job post (e.g. "Building RESTful APIs with Node.js", "Designing responsive UI components with React").
 
 Return the result as a raw JSON object matching this schema:
 {
@@ -28,14 +28,12 @@ Return the result as a raw JSON object matching this schema:
   "recipientName": string,
   "skills": string, // comma-separated list of 2-4 key tech/domains
   "comprehensiveSkills": string, // comprehensive comma-separated list of extracted and inferred relevant skills
-  "keyRequirements": string[] // list of key requirements
+  "keyRequirements": string[] // list of 2-4 key requirements/responsibilities extracted directly from the job description
 }
 
 LinkedIn Post / Job Description:
 ${postText || "(See attached image)"}
-`;
-
-    const requestContent = image ? [
+`;    const requestContent = image ? [
       prompt,
       {
         inlineData: {

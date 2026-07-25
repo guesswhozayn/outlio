@@ -47,6 +47,23 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         />
       </div>
       <div className="form-group">
+        <label>Key Requirements / Responsibilities (One per line)</label>
+        <textarea
+          placeholder="Building RESTful APIs with Node.js&#10;Designing responsive React UI components..."
+          value={
+            Array.isArray(fields.keyRequirements)
+              ? fields.keyRequirements.join("\n")
+              : (fields.keyRequirements || "")
+          }
+          onChange={(e) => {
+            const lines = e.target.value.split("\n");
+            setFields({ ...fields, keyRequirements: lines });
+          }}
+          rows={4}
+          style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--border-color)", background: "var(--input-bg)", color: "var(--text-primary)", resize: "vertical" }}
+        />
+      </div>
+      <div className="form-group">
         <label>Comprehensive Skills</label>
         <textarea
           placeholder="React, Node.js, Frontend Architecture, UI/UX..."

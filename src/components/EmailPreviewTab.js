@@ -26,6 +26,8 @@ export default function EmailPreviewTab({
   isSending,
   hasGmailConfig,
   handleSendEmail,
+  handleGenerateAIEmail,
+  isGeneratingEmail,
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem", flexGrow: 1 }}>
@@ -108,7 +110,27 @@ export default function EmailPreviewTab({
       </div>
 
       <div className="form-group" style={{ flexGrow: 1 }}>
-        <label>Email Body</label>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+          <label style={{ marginBottom: 0 }}>Email Body</label>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
+            onClick={handleGenerateAIEmail}
+            disabled={isGeneratingEmail || !settings.GEMINI_API_KEY}
+            title="Generate AI-crafted email tailored to the job description"
+          >
+            {isGeneratingEmail ? (
+              <>
+                <div className="spinner" style={{ width: "10px", height: "10px", borderWidth: "1.5px" }}></div> Generating...
+              </>
+            ) : (
+              <>
+                <Zap size={12} /> Generate AI Email
+              </>
+            )}
+          </button>
+        </div>
         <textarea
           style={{ flexGrow: 1, minHeight: "350px", fontFamily: "inherit" }}
           value={emailBody}
