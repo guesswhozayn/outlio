@@ -13,7 +13,6 @@ export function useAutoMailer() {
   const [subject, setSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
-  const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
 
   const [settings, setSettings] = useState({
     GEMINI_API_KEY: "", GEMINI_MODEL: "gemini-3.5-flash",
@@ -355,43 +354,6 @@ export function useAutoMailer() {
     }
   };
 
-  const handleGenerateAIEmail = async () => {
-    if (!settings.GEMINI_API_KEY) {
-      addLog("Gemini API key is required to generate AI email.", "error");
-      return;
-    }
-    setIsGeneratingEmail(true);
-    addLog("Generating AI email tailored to job description...", "info");
-    try {
-      const res = await fetch("/api/generate-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postText,
-          fields,
-          userProfile,
-          isFollowUp,
-          isColdEmail,
-          coldEmailRole,
-          userApiKey: settings.GEMINI_API_KEY,
-          userModel: settings.GEMINI_MODEL
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSubject(data.subject || subject);
-        setEmailBody(data.body || emailBody);
-        setIsManuallyEdited(true);
-        addLog("AI email generated successfully!", "success");
-      } else {
-        addLog(`Error generating email: ${data.error}`, "error");
-      }
-    } catch (err) {
-      addLog(`Error generating email: ${err.message}`, "error");
-    } finally {
-      setIsGeneratingEmail(false);
-    }
-  };
 
   const handleTailorResume = async () => {
     if (!settings.LATEX_RESUME) {
@@ -528,7 +490,6 @@ export function useAutoMailer() {
     subject, setSubject,
     emailBody, setEmailBody,
     isManuallyEdited, setIsManuallyEdited,
-    isGeneratingEmail, setIsGeneratingEmail,
     settings, setSettings,
     activeTab, setActiveTab,
     history, setHistory,
@@ -553,6 +514,6 @@ export function useAutoMailer() {
     screenshotName, setScreenshotName,
     handleImageUploadClick, handleImageChange, handleParsePost,
     handleUploadClick, handleFileChange, handleTailorResume, handleSendEmail,
-    handleSaveSettings, handleGenerateAIEmail,
+    handleSaveSettings,
   };
 }
