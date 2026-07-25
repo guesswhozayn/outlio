@@ -131,8 +131,6 @@ export default function Home() {
                 isSending={am.isSending}
                 hasGmailConfig={am.hasGmailConfig}
                 handleSendEmail={am.handleSendEmail}
-                handleGenerateAIEmail={am.handleGenerateAIEmail}
-                isGeneratingEmail={am.isGeneratingEmail}
               />
             )}
           </div>
