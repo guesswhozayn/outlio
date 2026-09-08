@@ -1,15 +1,31 @@
+const DEFAULT_FREE_OPTIONS = [
+  { name: "openrouter/free", displayName: "Auto (Best Available)" },
+  { name: "google/gemma-4-31b-it:free", displayName: "Google: Gemma 4 31B" },
+  { name: "google/gemma-4-26b-a4b-it:free", displayName: "Google: Gemma 4 26B A4B" },
+  { name: "nvidia/nemotron-3.5-lightning:free", displayName: "NVIDIA: Nemotron 3.5 Lightning" },
+  { name: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", displayName: "NVIDIA: Nemotron 3 Nano Omni" },
+  { name: "nvidia/nemotron-3-ultra-550b-a55b:free", displayName: "NVIDIA: Nemotron 3 Ultra" },
+  { name: "dots-studio/dots-3-note-preview:free", displayName: "Dots Studio: Dots3-Note Preview" },
+  { name: "thinkingmachines/inkling:free", displayName: "Thinking Machines: Inkling" },
+  { name: "poolside/laguna-s-2.1:free", displayName: "Poolside: Laguna S 2.1" },
+  { name: "cohere/north-mini-code:free", displayName: "Cohere: North Mini Code" },
+];
+
 export default function SettingsDrawer({
   settingsOpen,
   setSettingsOpen,
   settings,
   setSettings,
-  hasGeminiKey,
   isFetchingModels,
-  availableModels,
+  availableModels = [],
   hasGmailConfig,
   isSavingSettings,
   handleSaveSettings
 }) {
+  const modelOptions = availableModels.length > 0 ? availableModels : DEFAULT_FREE_OPTIONS;
+  const currentModel = settings.MODEL || "openrouter/free";
+  const isKnownModel = modelOptions.some(m => m.name === currentModel);
+
   return (
     <>
       <div className={`overlay ${settingsOpen ? "active" : ""}`} onClick={() => setSettingsOpen(false)}></div>
@@ -23,20 +39,9 @@ export default function SettingsDrawer({
         <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           
           <div className="form-group">
-            <label>Gemini API Key</label>
-            <input
-              type="password"
-              placeholder={hasGeminiKey ? "••••••••••••••••••••" : "Paste Gemini API Key"}
-              value={settings.GEMINI_API_KEY}
-              onChange={(e) => setSettings({ ...settings, GEMINI_API_KEY: e.target.value })}
-            />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              API key to power the LinkedIn post parsing capabilities.
-            </small>
-          </div>
-
-          <div className="form-group">
-            <label>Gemini Model {isFetchingModels && <span style={{ fontSize: "0.75rem", color: "var(--accent-cyan)" }}>(loading...)</span>}</label>
+            <label>
+              AI Model {isFetchingModels && <span style={{ fontSize: "0.75rem", color: "var(--accent-cyan)" }}>(updating models...)</span>}
+            </label>
             <select
               style={{
                 background: "var(--bg-secondary)",
@@ -49,43 +54,40 @@ export default function SettingsDrawer({
                 outline: "none",
                 cursor: "pointer"
               }}
-              value={["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash"].includes(settings.GEMINI_MODEL) || availableModels.some(m => m.name === settings.GEMINI_MODEL) ? settings.GEMINI_MODEL : "custom"}
+              value={isKnownModel ? currentModel : "custom"}
               onChange={(e) => {
                 if (e.target.value === "custom") {
-                  setSettings({ ...settings, GEMINI_MODEL: "gemini-3.5-flash" }); // Default custom model
+                  setSettings({ ...settings, MODEL: "openrouter/free" });
                 } else {
-                  setSettings({ ...settings, GEMINI_MODEL: e.target.value });
+                  setSettings({ ...settings, MODEL: e.target.value });
                 }
               }}
             >
-              {availableModels.length > 0 ? (
-                availableModels.map(m => (
-                  <option key={m.name} value={m.name}>{m.displayName}</option>
-                ))
-              ) : (
-                <>
-                  <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                </>
-              )}
+              {modelOptions.map((m) => {
+                const label = (m.displayName || m.name)
+                  .replace(/\s*\(free\)/gi, "")
+                  .replace(/^Free Models Router.*$/i, "Auto (Best Available)");
+                return (
+                  <option key={m.name} value={m.name}>
+                    {label}
+                  </option>
+                );
+              })}
               <option value="custom">Custom Model...</option>
             </select>
             
-            {(!["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash"].includes(settings.GEMINI_MODEL) && 
-              !availableModels.some(m => m.name === settings.GEMINI_MODEL)) && (
+            {!isKnownModel && (
               <input
                 type="text"
                 placeholder="Enter custom model identifier"
-                value={settings.GEMINI_MODEL}
-                onChange={(e) => setSettings({ ...settings, GEMINI_MODEL: e.target.value })}
+                value={currentModel}
+                onChange={(e) => setSettings({ ...settings, MODEL: e.target.value })}
                 style={{ marginTop: "0.5rem" }}
               />
             )}
             
             <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Select which Gemini model version to use for parsing.
+              Select which model to use for job post extraction and resume tailoring.
             </small>
           </div>
 
@@ -185,7 +187,7 @@ export default function SettingsDrawer({
               onChange={(e) => setSettings({ ...settings, LATEX_RESUME: e.target.value })}
             />
             <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Provide the LaTeX code for your resume. You can use placeholders like {"{{USER_NAME}}"}, {"{{USER_PHONE}}"}, {"{{USER_EMAIL}}"}, {"{{USER_LINKEDIN}}"}, {"{{USER_GITHUB}}"}, or {"{{USER_PORTFOLIO}}"} to dynamically insert your profile details. This will be tailored by Gemini to match job descriptions.
+              Provide the LaTeX code for your resume. You can use placeholders like {"{{USER_NAME}}"}, {"{{USER_PHONE}}"}, {"{{USER_EMAIL}}"}, {"{{USER_LINKEDIN}}"}, {"{{USER_GITHUB}}"}, or {"{{USER_PORTFOLIO}}"} to dynamically insert your profile details. This will be tailored by AI to match job descriptions.
             </small>
           </div>
 

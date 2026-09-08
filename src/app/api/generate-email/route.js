@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { chatCompletion, extractJson, DEFAULT_MODEL } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
@@ -10,15 +10,11 @@ export async function POST(req) {
       isFollowUp, 
       isColdEmail, 
       coldEmailRole, 
-      userApiKey, 
+      model, 
       userModel 
     } = await req.json();
 
-    if (!userApiKey) {
-      return NextResponse.json({ error: "Gemini API Key is not configured." }, { status: 400 });
-    }
-
-    const modelName = userModel || "gemini-3.5-flash";
+    const selectedModel = model || userModel || DEFAULT_MODEL;
 
     const company = fields?.company || "the company";
     const jobTitle = fields?.jobTitle || "the position";
@@ -39,6 +35,11 @@ export async function POST(req) {
     let contextType = "Standard Job Application";
     if (isFollowUp) contextType = "Follow-Up Email on Previous Application";
     if (isColdEmail) contextType = `Cold Application for ${coldEmailRole || 'General'} Role`;
+
+    const systemMessage = {
+      role: "system",
+      content: "You are an expert career counselor and professional email writer. You always respond strictly with a raw JSON object containing 'subject' and 'body' keys without markdown or surrounding comments.",
+    };
 
     const prompt = `
 You are an expert career counselor and professional email writer. 
@@ -76,17 +77,20 @@ Return the response strictly as a raw JSON object with this structure:
 }
 `;
 
-    const genAI = new GoogleGenerativeAI(userApiKey);
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      generationConfig: { responseMimeType: "application/json" },
+    const rawResponse = await chatCompletion({
+      model: selectedModel,
+      messages: [
+        systemMessage,
+        { role: "user", content: prompt },
+      ],
     });
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    const parsedData = JSON.parse(responseText);
+    const parsedData = extractJson(rawResponse);
 
-    return NextResponse.json(parsedData);
+    return NextResponse.json({
+      subject: parsedData.subject || `Application for ${jobTitle} - ${candidateName}`,
+      body: parsedData.body || "",
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

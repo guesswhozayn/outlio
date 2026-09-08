@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { chatCompletion, extractJson, DEFAULT_MODEL } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
-    const { postText, image, mimeType, userApiKey, userModel } = await req.json();
+    const { postText, image, mimeType, model, userModel } = await req.json();
 
-    if (!userApiKey) {
-      return NextResponse.json({ error: "Gemini API Key is not configured." }, { status: 400 });
-    }
+    const selectedModel = model || userModel || DEFAULT_MODEL;
 
     const prompt = `
 Analyze the following LinkedIn post or job description. Extract the following information:
@@ -26,54 +24,61 @@ Return the result as a raw JSON object matching this schema:
   "company": string or null,
   "jobTitle": string or null,
   "recipientName": string,
-  "skills": string, // comma-separated list of 2-4 key tech/domains
-  "comprehensiveSkills": string, // comprehensive comma-separated list of extracted and inferred relevant skills
-  "keyRequirements": string[] // list of 2-4 key requirements/responsibilities extracted directly from the job description
+  "skills": string,
+  "comprehensiveSkills": string,
+  "keyRequirements": string[]
 }
 
 LinkedIn Post / Job Description:
 ${postText || "(See attached image)"}
-`;    const requestContent = image ? [
-      prompt,
-      {
-        inlineData: {
-          data: image,
-          mimeType: mimeType || 'image/png'
-        }
-      }
-    ] : prompt;
+`;
 
-    let result;
-    const maxRetries = 2;
-    let attempt = 0;
-    const genAI = new GoogleGenerativeAI(userApiKey);
-    const modelName = userModel || "gemini-3.5-flash";
+    const systemMessage = {
+      role: "system",
+      content: "You are an expert AI parser that extracts structured information from job posts and LinkedIn listings. You MUST return strictly a raw, valid JSON object matching the requested schema. Do not enclose in markdown ticks if possible, and do not provide any explanation outside the JSON.",
+    };
 
-    while (attempt <= maxRetries) {
-      try {
-        const currentModelName = (attempt === maxRetries && modelName.includes("3.5")) ? "gemini-3.1-flash-lite" : modelName;
-        
-        const model = genAI.getGenerativeModel({
-          model: currentModelName,
-          generationConfig: { responseMimeType: "application/json" },
-        });
-
-        result = await model.generateContent(requestContent);
-        break; 
-      } catch (error) {
-        attempt++;
-        const isUnavailable = error.message?.includes("503") || error.message?.includes("high demand") || error.status === 503;
-        
-        if (attempt > maxRetries || !isUnavailable) {
-          throw error; 
-        }
-        await new Promise(res => setTimeout(res, 2000));
-      }
+    let userContent;
+    if (image) {
+      userContent = [
+        {
+          type: "text",
+          text: prompt,
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType || 'image/png'};base64,${image}`,
+          },
+        },
+      ];
+    } else {
+      userContent = prompt;
     }
-    const responseText = result.response.text();
-    const parsedData = JSON.parse(responseText);
 
-    return NextResponse.json(parsedData);
+    const rawResponse = await chatCompletion({
+      model: selectedModel,
+      messages: [
+        systemMessage,
+        { role: "user", content: userContent },
+      ],
+    });
+
+    const parsedData = extractJson(rawResponse);
+
+    const normalized = {
+      email: parsedData.email || null,
+      company: parsedData.company || null,
+      jobTitle: parsedData.jobTitle || null,
+      recipientName: parsedData.recipientName || "Hiring Team",
+      skills: parsedData.skills || "",
+      comprehensiveSkills: parsedData.comprehensiveSkills || "",
+      keyRequirements: Array.isArray(parsedData.keyRequirements)
+        ? parsedData.keyRequirements
+        : (parsedData.keyRequirements ? [String(parsedData.keyRequirements)] : []),
+    };
+
+    return NextResponse.json(normalized);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

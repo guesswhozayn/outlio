@@ -15,7 +15,7 @@ export function useAutoMailer() {
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
 
   const [settings, setSettings] = useState({
-    GEMINI_API_KEY: "", GEMINI_MODEL: "gemini-3.5-flash",
+    MODEL: "openrouter/free",
     GMAIL_USER: "", GMAIL_APP_PASSWORD: "",
     USER_NAME: "", USER_PHONE: "", USER_LINKEDIN: "", USER_GITHUB: "", USER_PORTFOLIO: "", LATEX_RESUME: "",
   });
@@ -26,7 +26,6 @@ export function useAutoMailer() {
   const [isColdEmail, setIsColdEmail] = useState(false);
   const [coldEmailRole, setColdEmailRole] = useState("General");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const [hasGmailConfig, setHasGmailConfig] = useState(false);
   const [resumeExists, setResumeExists] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
@@ -90,6 +89,10 @@ export function useAutoMailer() {
         }
       }
 
+      // Migrate from old GEMINI_MODEL if present
+      const savedModel = finalSettings.MODEL || (finalSettings.GEMINI_MODEL && !finalSettings.GEMINI_MODEL.includes("gemini") ? finalSettings.GEMINI_MODEL : "openrouter/free");
+      finalSettings.MODEL = savedModel;
+
       setSettings(prev => ({ ...prev, ...finalSettings }));
       setUserProfile({ 
         name: finalSettings.USER_NAME || "", 
@@ -98,11 +101,8 @@ export function useAutoMailer() {
         github: finalSettings.USER_GITHUB || "",
         portfolio: finalSettings.USER_PORTFOLIO || ""
       });
-      setHasGeminiKey(!!finalSettings.GEMINI_API_KEY);
       setHasGmailConfig(!!finalSettings.GMAIL_USER && !!finalSettings.GMAIL_APP_PASSWORD);
-      if (finalSettings.GEMINI_API_KEY) {
-        fetchAvailableModels(finalSettings.GEMINI_API_KEY);
-      }
+      fetchAvailableModels();
       
       try {
         const storedHistory = await localforage.getItem("automailer_history");
@@ -126,16 +126,10 @@ export function useAutoMailer() {
     }
   };
 
-  const fetchAvailableModels = async (key) => {
-    const apiKeyToUse = key || settings.GEMINI_API_KEY;
-    if (!apiKeyToUse) return;
-
+  const fetchAvailableModels = async () => {
     setIsFetchingModels(true);
     try {
-      const res = await fetch("/api/models", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userApiKey: apiKeyToUse }),
-      });
+      const res = await fetch("/api/models");
       const data = await res.json();
       if (res.ok) setAvailableModels(data.models || []);
     } catch (error) {
@@ -146,14 +140,8 @@ export function useAutoMailer() {
   };
 
   useEffect(() => {
-    if (settingsOpen && (settings.GEMINI_API_KEY || hasGeminiKey)) fetchAvailableModels();
+    if (settingsOpen && availableModels.length === 0) fetchAvailableModels();
   }, [settingsOpen]);
-
-  useEffect(() => {
-    if (settings.GEMINI_API_KEY && settings.GEMINI_API_KEY.length > 20) {
-      fetchAvailableModels();
-    }
-  }, [settings.GEMINI_API_KEY]);
 
   const compileTemplate = () => {
     if (isManuallyEdited) return;
@@ -264,7 +252,6 @@ export function useAutoMailer() {
         github: settings.USER_GITHUB,
         portfolio: settings.USER_PORTFOLIO
       });
-      setHasGeminiKey(!!settings.GEMINI_API_KEY);
       setHasGmailConfig(!!settings.GMAIL_USER && !!settings.GMAIL_APP_PASSWORD);
       addLog("Settings saved successfully.", "success");
       setSettingsOpen(false);
@@ -316,7 +303,7 @@ export function useAutoMailer() {
   const handleParsePost = async () => {
     if (!postText.trim() && !screenshotData) return;
     setIsParsing(true);
-    addLog("Sending to Gemini...", "info");
+    addLog("Sending to AI extractor...", "info");
     
     const base64Image = screenshotData ? screenshotData.split(",")[1] : null;
     const mimeType = screenshotData ? screenshotData.split(";")[0].split(":")[1] : null;
@@ -328,8 +315,7 @@ export function useAutoMailer() {
           postText, 
           image: base64Image,
           mimeType,
-          userApiKey: settings.GEMINI_API_KEY, 
-          userModel: settings.GEMINI_MODEL 
+          model: settings.MODEL || "openrouter/free"
         }),
       });
       const data = await res.json();
@@ -354,7 +340,6 @@ export function useAutoMailer() {
     }
   };
 
-
   const handleTailorResume = async () => {
     if (!settings.LATEX_RESUME) {
       addLog("Please provide a base LaTeX resume in settings first.", "error");
@@ -362,7 +347,7 @@ export function useAutoMailer() {
     }
     
     setIsTailoring(true);
-    addLog("Tailoring resume with Gemini...", "info");
+    addLog("Tailoring resume with AI...", "info");
     
     try {
       let tailoredLatexTemplate = settings.LATEX_RESUME;
@@ -385,8 +370,7 @@ export function useAutoMailer() {
         body: JSON.stringify({ 
           latexCode: tailoredLatexTemplate,
           jobDescription: postText || fields.comprehensiveSkills || fields.skills || "Software Engineering Role",
-          userApiKey: settings.GEMINI_API_KEY,
-          userModel: settings.GEMINI_MODEL
+          model: settings.MODEL || "openrouter/free"
         })
       });
       const tailorData = await tailorRes.json();
@@ -480,7 +464,6 @@ export function useAutoMailer() {
     }
   };
 
-
   return {
     session, status,
     mounted, setMounted,
@@ -497,7 +480,6 @@ export function useAutoMailer() {
     isColdEmail, setIsColdEmail,
     coldEmailRole, setColdEmailRole,
     settingsOpen, setSettingsOpen,
-    hasGeminiKey, setHasGeminiKey,
     hasGmailConfig, setHasGmailConfig,
     resumeExists, setResumeExists,
     resumeFile, setResumeFile,

@@ -142,7 +142,6 @@ export default function Home() {
         setSettingsOpen={am.setSettingsOpen}
         settings={am.settings}
         setSettings={am.setSettings}
-        hasGeminiKey={am.hasGeminiKey}
         isFetchingModels={am.isFetchingModels}
         availableModels={am.availableModels}
         hasGmailConfig={am.hasGmailConfig}

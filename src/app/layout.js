@@ -3,7 +3,7 @@ import { Providers } from "../components/Providers";
 
 export const metadata = {
   title: "AutoMailer",
-  description: "A minimalist bot for parsing job applications using Gemini.",
+  description: "A minimalist bot for parsing job applications using AI models.",
 };
 
 export default function RootLayout({ children }) {
