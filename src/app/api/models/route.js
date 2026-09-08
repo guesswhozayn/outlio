@@ -1,28 +1,21 @@
 import { NextResponse } from 'next/server';
+import { fetchFreeModels } from '@/lib/openrouter';
 
-export async function POST(req) {
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
-    const { userApiKey } = await req.json();
+    const models = await fetchFreeModels();
+    return NextResponse.json({ models });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
-    if (!userApiKey) {
-      return NextResponse.json({ error: "Gemini API Key is not configured." }, { status: 400 });
-    }
-
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${userApiKey}`);
-    const data = await res.json();
-
-    if (data.error) {
-      return NextResponse.json({ error: data.error.message }, { status: 400 });
-    }
-
-    const availableModels = data.models
-      .filter(m => m.name.includes("gemini") && m.supportedGenerationMethods.includes("generateContent"))
-      .map(m => ({
-        name: m.name.replace("models/", ""),
-        displayName: m.displayName || m.name.replace("models/", ""),
-      }));
-
-    return NextResponse.json({ models: availableModels });
+export async function POST() {
+  try {
+    const models = await fetchFreeModels();
+    return NextResponse.json({ models });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

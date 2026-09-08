@@ -24,7 +24,7 @@ export default function JobInput({
       <div className="form-group" style={{ flexGrow: 1 }}>
         <textarea
           className="post-input"
-          placeholder="Paste the LinkedIn post description or job listing content here. Our Gemini extractor will pull out the target email, position, skills, and manager details..."
+          placeholder="Paste the LinkedIn post description or job listing content here. Our AI extractor will pull out the target email, position, skills, and manager details..."
           value={postText}
           onChange={(e) => setPostText(e.target.value)}
         />
