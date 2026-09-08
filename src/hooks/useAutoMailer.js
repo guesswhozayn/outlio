@@ -1,17 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import localforage from "localforage";
 import { useSession } from "next-auth/react";
 
+const emptySubscribe = () => () => {};
+
 export function useAutoMailer() {
   const { data: session, status } = useSession();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [postText, setPostText] = useState("");
   const [fields, setFields] = useState({
     email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [],
   });
   const [userProfile, setUserProfile] = useState({ name: "", phone: "", linkedin: "", github: "", portfolio: "" });
-  const [subject, setSubject] = useState("");
-  const [emailBody, setEmailBody] = useState("");
+  
+  const [manualSubject, setManualSubject] = useState("");
+  const [manualEmailBody, setManualEmailBody] = useState("");
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
 
   const [settings, setSettings] = useState({
@@ -26,7 +29,7 @@ export function useAutoMailer() {
   const [isColdEmail, setIsColdEmail] = useState(false);
   const [coldEmailRole, setColdEmailRole] = useState("General");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [hasGmailConfig, setHasGmailConfig] = useState(false);
+  const hasGmailConfig = Boolean(session?.user?.email || (settings.GMAIL_USER && settings.GMAIL_APP_PASSWORD));
   const [resumeExists, setResumeExists] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -48,15 +51,27 @@ export function useAutoMailer() {
     setLogs(prev => [...prev, { timestamp, message, type }]);
   };
 
-  useEffect(() => {
-    setMounted(true);
-    if (status === "authenticated") {
-      loadSettings();
-      addLog("Dashboard initialized. Ready to process jobs.", "info");
+  const fetchAvailableModels = useCallback(async () => {
+    setIsFetchingModels(true);
+    try {
+      const res = await fetch("/api/models");
+      const data = await res.json();
+      if (res.ok) setAvailableModels(data.models || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsFetchingModels(false);
     }
-  }, [status]);
+  }, []);
 
-  const loadSettings = async () => {
+  const handleSetSettingsOpen = useCallback((open) => {
+    if (open && availableModels.length === 0) {
+      fetchAvailableModels();
+    }
+    setSettingsOpen(open);
+  }, [availableModels.length, fetchAvailableModels]);
+
+  const loadSettings = useCallback(async () => {
     try {
       const email = session?.user?.email;
       let localSettings = {};
@@ -74,7 +89,6 @@ export function useAutoMailer() {
       let finalSettings = { ...localSettings };
 
       if (parsed && Object.keys(parsed).length > 0 && !parsed.error) {
-        // If server returns data (e.g., from KV), it overrides local
         const hasActualData = Object.values(parsed).some(val => val !== "");
         if (hasActualData) {
           finalSettings = { ...finalSettings, ...parsed };
@@ -89,9 +103,14 @@ export function useAutoMailer() {
         }
       }
 
-      // Migrate from old GEMINI_MODEL if present
       const savedModel = finalSettings.MODEL || (finalSettings.GEMINI_MODEL && !finalSettings.GEMINI_MODEL.includes("gemini") ? finalSettings.GEMINI_MODEL : "openrouter/free");
       finalSettings.MODEL = savedModel;
+      if (!finalSettings.GMAIL_USER && email) {
+        finalSettings.GMAIL_USER = email;
+      }
+      if (!finalSettings.USER_NAME && session?.user?.name) {
+        finalSettings.USER_NAME = session.user.name;
+      }
 
       setSettings(prev => ({ ...prev, ...finalSettings }));
       setUserProfile({ 
@@ -101,7 +120,6 @@ export function useAutoMailer() {
         github: finalSettings.USER_GITHUB || "",
         portfolio: finalSettings.USER_PORTFOLIO || ""
       });
-      setHasGmailConfig(!!finalSettings.GMAIL_USER && !!finalSettings.GMAIL_APP_PASSWORD);
       fetchAvailableModels();
       
       try {
@@ -124,30 +142,19 @@ export function useAutoMailer() {
     } catch (e) {
       console.error(e);
     }
-  };
-
-  const fetchAvailableModels = async () => {
-    setIsFetchingModels(true);
-    try {
-      const res = await fetch("/api/models");
-      const data = await res.json();
-      if (res.ok) setAvailableModels(data.models || []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsFetchingModels(false);
-    }
-  };
+  }, [session?.user?.email, session?.user?.name, fetchAvailableModels]);
 
   useEffect(() => {
-    if (settingsOpen && availableModels.length === 0) fetchAvailableModels();
-  }, [settingsOpen]);
+    if (status === "authenticated") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadSettings();
+      addLog("Dashboard initialized. Ready to process jobs.", "info");
+    }
+  }, [status, loadSettings]);
 
-  const compileTemplate = () => {
-    if (isManuallyEdited) return;
-
+  const compiled = useMemo(() => {
     const pTitle = fields.jobTitle || "[Position Title]";
-    const pSkills = fields.skills || "[your field/technology/domain]";
+    const pSkills = fields.skills || "";
     const cName = fields.company ? fields.company : "your company";
 
     const uName = userProfile.name || "[Your Name]";
@@ -163,37 +170,36 @@ export function useAutoMailer() {
 
     const reqs = Array.isArray(fields.keyRequirements) && fields.keyRequirements.length > 0
       ? fields.keyRequirements
-      : (typeof fields.keyRequirements === 'string' && fields.keyRequirements.trim() 
-          ? fields.keyRequirements.split('\n').filter(Boolean) 
-          : []);
+      : [];
 
     let body = "";
     let sub = "";
 
     if (isFollowUp) {
-      body = `${salutation}\n\nI am writing to follow up on my application for the ${pTitle} role at ${cName}. I remain very enthusiastic about joining your team and contributing my expertise in ${pSkills}.\n\nPlease let me know if you need any additional information or work samples from my end. I have re-attached my resume for your convenience.\n\nThank you again for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      const followUpSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "this field";
+      body = `${salutation}\n\nI am writing to follow up on my application for the ${pTitle} role at ${cName}. I remain very enthusiastic about joining your team and contributing my expertise in ${followUpSkills}.\n\nPlease let me know if you need any additional information or work samples from my end. I have re-attached my resume for your convenience.\n\nThank you again for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Following up - Application for ${pTitle} - ${uName}`;
     } else if (isColdEmail) {
       let roleText = pTitle !== "[Position Title]" ? pTitle : "Software Developer";
       let contributionText = "leverage my skills to contribute to your engineering goals";
-      let coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "relevant technologies";
+      let coldEmailSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "relevant technologies";
 
       if (coldEmailRole === "Frontend") {
          roleText = "Frontend Developer";
          contributionText = "help build engaging, responsive user interfaces and deliver seamless web applications";
-         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "JavaScript, TypeScript, React, Next.js, and CSS";
+         coldEmailSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "JavaScript, TypeScript, React, Next.js, and CSS";
       } else if (coldEmailRole === "Backend") {
          roleText = "Backend Developer";
          contributionText = "help build scalable server-side architecture, APIs, and data pipelines";
-         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "Node.js, Python, SQL, REST/GraphQL APIs, and Docker";
+         coldEmailSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "Node.js, Python, SQL, REST/GraphQL APIs, and Docker";
       } else if (coldEmailRole === "Full Stack") {
          roleText = "Full Stack Developer";
          contributionText = "contribute across the full stack to build end-to-end features and scalable solutions";
-         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "TypeScript, React, Next.js, Node.js, and modern databases";
+         coldEmailSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "TypeScript, React, Next.js, Node.js, and modern databases";
       } else if (coldEmailRole === "Software Engineer") {
          roleText = "Software Engineer";
          contributionText = "help build robust, scalable applications and solve complex technical problems";
-         coldEmailSkills = pSkills !== "[your field/technology/domain]" ? pSkills : "JavaScript, TypeScript, Python, SQL, and cloud platforms";
+         coldEmailSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "JavaScript, TypeScript, Python, SQL, and cloud platforms";
       }
 
       let reqSection = "";
@@ -204,6 +210,7 @@ export function useAutoMailer() {
       body = `${salutation}\n\nI am writing to express my strong interest in potential ${roleText} roles at ${cName}. With my background in ${coldEmailSkills}, I am eager to ${contributionText}.${reqSection}\n\nI have attached my resume for your review. I would love the opportunity to briefly connect to discuss any current or upcoming openings.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Application for ${roleText} Role - ${uName}`;
     } else {
+      const standardSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "relevant technologies";
       let reqSection = "";
       if (reqs.length > 0) {
         reqSection = `\n\nMy background directly aligns with the key requirements of this position:\n` + reqs.map(r => `• ${r.replace(/^[•\-\*]\s*/, '')}`).join("\n");
@@ -211,15 +218,31 @@ export function useAutoMailer() {
         reqSection = `\n\nMy technical expertise spans ${fields.comprehensiveSkills}, matching the core qualifications outlined in your job posting.`;
       }
 
-      body = `${salutation}\n\nI am writing to express my strong interest in the ${pTitle} position at ${cName}. Having worked extensively with ${pSkills}, I am confident in my ability to bring immediate value to your team.${reqSection}\n\nI have attached my resume for your review. I would welcome the opportunity to discuss how my background and technical skills align with your team's goals.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
+      body = `${salutation}\n\nI am writing to express my strong interest in the ${pTitle} position at ${cName}. Having worked extensively with ${standardSkills}, I am confident in my ability to bring immediate value to your team.${reqSection}\n\nI have attached my resume for your review. I would welcome the opportunity to discuss how my background and technical skills align with your team's goals.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
       sub = `Application for ${pTitle} - ${uName}`;
     }
 
-    setSubject(sub);
-    setEmailBody(body);
-  };
+    return { subject: sub, body };
+  }, [fields, userProfile, isFollowUp, isColdEmail, coldEmailRole]);
 
-  useEffect(() => { compileTemplate(); }, [fields, userProfile, isColdEmail, coldEmailRole]);
+  const subject = isManuallyEdited ? manualSubject : compiled.subject;
+  const emailBody = isManuallyEdited ? manualEmailBody : compiled.body;
+
+  const setSubject = (val) => {
+    setManualSubject(val);
+    setIsManuallyEdited(true);
+  };
+  const setEmailBody = (val) => {
+    setManualEmailBody(val);
+    setIsManuallyEdited(true);
+  };
+  const handleSetIsManuallyEdited = (val) => {
+    setIsManuallyEdited(val);
+    if (!val) {
+      setManualSubject("");
+      setManualEmailBody("");
+    }
+  };
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -252,7 +275,6 @@ export function useAutoMailer() {
         github: settings.USER_GITHUB,
         portfolio: settings.USER_PORTFOLIO
       });
-      setHasGmailConfig(!!settings.GMAIL_USER && !!settings.GMAIL_APP_PASSWORD);
       addLog("Settings saved successfully.", "success");
       setSettingsOpen(false);
     } catch (e) {
@@ -269,6 +291,7 @@ export function useAutoMailer() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    e.target.value = "";
     if (file.type !== "application/pdf") {
       addLog("Only PDF files are supported.", "error");
       return;
@@ -291,6 +314,7 @@ export function useAutoMailer() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    e.target.value = "";
     setScreenshotName(file.name);
     
     const reader = new FileReader();
@@ -310,31 +334,38 @@ export function useAutoMailer() {
 
     try {
       const res = await fetch("/api/parse", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          postText, 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postText,
           image: base64Image,
-          mimeType,
+          mimeType: mimeType,
           model: settings.MODEL || "openrouter/free"
         }),
       });
+
       const data = await res.json();
-      if (res.ok) {
-        setFields({
-          email: data.email || "", company: data.company || "", jobTitle: data.jobTitle || "",
-          recipientName: data.recipientName || "Hiring Team", skills: data.skills || "",
-          comprehensiveSkills: data.comprehensiveSkills || "",
-          keyRequirements: Array.isArray(data.keyRequirements) ? data.keyRequirements : (data.keyRequirements ? [data.keyRequirements] : []),
-        });
-        setIsFollowUp(false);
-        setIsManuallyEdited(false);
-        setActiveTab("preview");
-        addLog("Extracted successfully.", "success");
-      } else {
-        addLog(`Error: ${data.error}`, "error");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to parse post");
+
+      const newFields = {
+        email: data.email || "",
+        company: data.company || "",
+        jobTitle: data.jobTitle || "",
+        recipientName: data.recipientName || "Hiring Team",
+        skills: data.skills || "",
+        comprehensiveSkills: data.comprehensiveSkills || "",
+        keyRequirements: Array.isArray(data.keyRequirements) ? data.keyRequirements : []
+      };
+
+      setFields(newFields);
+      setIsManuallyEdited(false);
+      setIsFollowUp(false);
+      setIsColdEmail(false);
+      setActiveTab("preview");
+      addLog("Job details extracted successfully!", "success");
+
     } catch (error) {
-      addLog(`Error: ${error.message}`, "error");
+      addLog(`Error parsing post: ${error.message}`, "error");
     } finally {
       setIsParsing(false);
     }
@@ -351,17 +382,35 @@ export function useAutoMailer() {
     
     try {
       let tailoredLatexTemplate = settings.LATEX_RESUME;
-      const replacements = {
-        "\\{\\{USER_NAME\\}\\}": settings.USER_NAME || "",
-        "\\{\\{USER_PHONE\\}\\}": settings.USER_PHONE || "",
-        "\\{\\{USER_EMAIL\\}\\}": settings.GMAIL_USER || session?.user?.email || "",
-        "\\{\\{USER_LINKEDIN\\}\\}": settings.USER_LINKEDIN || "",
-        "\\{\\{USER_GITHUB\\}\\}": settings.USER_GITHUB || "",
-        "\\{\\{USER_PORTFOLIO\\}\\}": settings.USER_PORTFOLIO || ""
-      };
       
-      Object.entries(replacements).forEach(([key, value]) => {
-        tailoredLatexTemplate = tailoredLatexTemplate.replace(new RegExp(key, 'g'), value);
+      const replaceLatexValue = (template, placeholder, rawValue) => {
+        if (!rawValue) return template.replaceAll(placeholder, "");
+        return template.replaceAll(placeholder, (match, offset, fullStr) => {
+          const before = fullStr.slice(Math.max(0, offset - 40), offset);
+          const isInsideHrefUrl = /\\href\{[^{}]*$/.test(before);
+          const isInsideUrl = /\\url\{[^{}]*$/.test(before);
+          if (isInsideHrefUrl || isInsideUrl) {
+            return rawValue;
+          }
+          return String(rawValue)
+            .replace(/\\/g, "\\textbackslash{}")
+            .replace(/([&%$#_{}])/g, "\\$1")
+            .replace(/~/g, "\\textasciitilde{}")
+            .replace(/\^/g, "\\textasciicircum{}");
+        });
+      };
+
+      const replacements = [
+        ["{{USER_NAME}}", settings.USER_NAME || ""],
+        ["{{USER_PHONE}}", settings.USER_PHONE || ""],
+        ["{{USER_EMAIL}}", settings.GMAIL_USER || session?.user?.email || ""],
+        ["{{USER_LINKEDIN}}", settings.USER_LINKEDIN || ""],
+        ["{{USER_GITHUB}}", settings.USER_GITHUB || ""],
+        ["{{USER_PORTFOLIO}}", settings.USER_PORTFOLIO || ""]
+      ];
+      
+      replacements.forEach(([key, value]) => {
+        tailoredLatexTemplate = replaceLatexValue(tailoredLatexTemplate, key, value);
       });
 
       const tailorRes = await fetch("/api/tailor-resume", {
@@ -414,8 +463,8 @@ export function useAutoMailer() {
     formData.append("toEmail", fields.email);
     formData.append("subject", subject);
     formData.append("emailBody", emailBody);
-    formData.append("gmailUser", settings.GMAIL_USER);
-    formData.append("gmailAppPassword", settings.GMAIL_APP_PASSWORD);
+    formData.append("gmailUser", settings.GMAIL_USER || session?.user?.email || "");
+    formData.append("gmailAppPassword", settings.GMAIL_APP_PASSWORD || "");
     formData.append("userName", settings.USER_NAME || "");
     const defaultFileName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
     formData.append("resume", resumeFile, resumeFile.name || defaultFileName);
@@ -432,6 +481,11 @@ export function useAutoMailer() {
           jobTitle: fields.jobTitle || "Unknown Role",
           email: fields.email,
           recipientName: fields.recipientName,
+          skills: fields.skills || "",
+          keyRequirements: fields.keyRequirements || [],
+          comprehensiveSkills: fields.comprehensiveSkills || "",
+          userPhone: fields.userPhone || "",
+          userLinkedin: fields.userLinkedin || "",
           type: isFollowUp ? "Follow Up" : (isColdEmail ? "Cold Email" : "Standard Application")
         };
         const updatedHistory = [newEntry, ...history];
@@ -466,21 +520,21 @@ export function useAutoMailer() {
 
   return {
     session, status,
-    mounted, setMounted,
+    mounted,
     postText, setPostText,
     fields, setFields,
     userProfile, setUserProfile,
     subject, setSubject,
     emailBody, setEmailBody,
-    isManuallyEdited, setIsManuallyEdited,
+    isManuallyEdited, setIsManuallyEdited: handleSetIsManuallyEdited,
     settings, setSettings,
     activeTab, setActiveTab,
     history, setHistory,
     isFollowUp, setIsFollowUp,
     isColdEmail, setIsColdEmail,
     coldEmailRole, setColdEmailRole,
-    settingsOpen, setSettingsOpen,
-    hasGmailConfig, setHasGmailConfig,
+    settingsOpen, setSettingsOpen: handleSetSettingsOpen,
+    hasGmailConfig,
     resumeExists, setResumeExists,
     resumeFile, setResumeFile,
     isParsing, setIsParsing,

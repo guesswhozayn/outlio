@@ -46,6 +46,9 @@ export default function JobInput({
             onClick={() => {
               setScreenshotData(null);
               setScreenshotName("");
+              if (imageInputRef.current) {
+                imageInputRef.current.value = "";
+              }
             }}
           >
             ✕
