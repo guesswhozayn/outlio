@@ -60,7 +60,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
             setFields({ ...fields, keyRequirements: lines });
           }}
           rows={4}
-          style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--border-color)", background: "var(--input-bg)", color: "var(--text-primary)", resize: "vertical" }}
+          style={{ resize: "vertical", minHeight: "90px" }}
         />
       </div>
       <div className="form-group">
@@ -70,7 +70,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
           value={fields.comprehensiveSkills}
           onChange={(e) => setFields({ ...fields, comprehensiveSkills: e.target.value })}
           rows={3}
-          style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--border-color)", background: "var(--input-bg)", color: "var(--text-primary)", resize: "vertical" }}
+          style={{ resize: "vertical", minHeight: "80px" }}
         />
       </div>
     </div>

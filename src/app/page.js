@@ -16,8 +16,8 @@ export default function Home() {
 
   if (am.status === "loading") {
     return (
-      <div className="app-container" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh'}}>
-        <div className="spinner"></div>
+      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div className="spinner spinner-lg"></div>
       </div>
     );
   }
@@ -26,7 +26,7 @@ export default function Home() {
     return (
       <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '3rem 2rem' }}>
-          <div className="logo-icon" style={{ display: 'inline-block', marginBottom: '1rem', width: '40px', height: '40px', lineHeight: '40px' }}>AM</div>
+          <div className="logo-icon" style={{ marginBottom: '1rem', width: '48px', height: '48px' }}>AM</div>
           <h2 style={{ marginBottom: '0.5rem', fontFamily: 'var(--font-mono)' }}>AutoMailer</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
             Sign in with Google to securely sync your configuration across devices.
@@ -46,6 +46,7 @@ export default function Home() {
         theme={theme}
         setTheme={setTheme}
         setSettingsOpen={am.setSettingsOpen}
+        session={am.session}
       />
 
       <div className="dashboard-grid">
@@ -144,7 +145,6 @@ export default function Home() {
         setSettings={am.setSettings}
         isFetchingModels={am.isFetchingModels}
         availableModels={am.availableModels}
-        hasGmailConfig={am.hasGmailConfig}
         isSavingSettings={am.isSavingSettings}
         handleSaveSettings={am.handleSaveSettings}
       />

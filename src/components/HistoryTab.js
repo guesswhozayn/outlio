@@ -19,13 +19,18 @@ export default function HistoryTab({ history, setFields, setIsColdEmail, setIsFo
               className="btn btn-secondary" 
               style={{ fontSize: "0.75rem", padding: "0.4rem 0.75rem", whiteSpace: "nowrap", flexShrink: 0 }}
               onClick={() => {
-                setFields({
+                setFields(prev => ({
+                  ...prev,
                   email: item.email,
                   company: item.company,
                   jobTitle: item.jobTitle,
-                  recipientName: item.recipientName,
-                  skills: ""
-                });
+                  recipientName: item.recipientName || prev.recipientName,
+                  skills: item.skills || prev.skills || "",
+                  keyRequirements: item.keyRequirements || prev.keyRequirements || [],
+                  comprehensiveSkills: item.comprehensiveSkills || prev.comprehensiveSkills || "",
+                  userPhone: item.userPhone || prev.userPhone || "",
+                  userLinkedin: item.userLinkedin || prev.userLinkedin || ""
+                }));
                 setIsColdEmail(false);
                 setIsFollowUp(true);
                 setIsManuallyEdited(false);

@@ -1,15 +1,5 @@
-const DEFAULT_FREE_OPTIONS = [
-  { name: "openrouter/free", displayName: "Auto (Best Available)" },
-  { name: "google/gemma-4-31b-it:free", displayName: "Google: Gemma 4 31B" },
-  { name: "google/gemma-4-26b-a4b-it:free", displayName: "Google: Gemma 4 26B A4B" },
-  { name: "nvidia/nemotron-3.5-lightning:free", displayName: "NVIDIA: Nemotron 3.5 Lightning" },
-  { name: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", displayName: "NVIDIA: Nemotron 3 Nano Omni" },
-  { name: "nvidia/nemotron-3-ultra-550b-a55b:free", displayName: "NVIDIA: Nemotron 3 Ultra" },
-  { name: "dots-studio/dots-3-note-preview:free", displayName: "Dots Studio: Dots3-Note Preview" },
-  { name: "thinkingmachines/inkling:free", displayName: "Thinking Machines: Inkling" },
-  { name: "poolside/laguna-s-2.1:free", displayName: "Poolside: Laguna S 2.1" },
-  { name: "cohere/north-mini-code:free", displayName: "Cohere: North Mini Code" },
-];
+import { useState } from "react";
+import { FALLBACK_FREE_MODELS } from "@/lib/openrouter";
 
 export default function SettingsDrawer({
   settingsOpen,
@@ -18,13 +8,15 @@ export default function SettingsDrawer({
   setSettings,
   isFetchingModels,
   availableModels = [],
-  hasGmailConfig,
   isSavingSettings,
   handleSaveSettings
 }) {
-  const modelOptions = availableModels.length > 0 ? availableModels : DEFAULT_FREE_OPTIONS;
+  const modelOptions = availableModels.length > 0 ? availableModels : FALLBACK_FREE_MODELS;
   const currentModel = settings.MODEL || "openrouter/free";
   const isKnownModel = modelOptions.some(m => m.name === currentModel);
+  const [customSelected, setCustomSelected] = useState(false);
+
+  const isCustomMode = customSelected || (!isKnownModel && Boolean(currentModel));
 
   return (
     <>
@@ -54,11 +46,15 @@ export default function SettingsDrawer({
                 outline: "none",
                 cursor: "pointer"
               }}
-              value={isKnownModel ? currentModel : "custom"}
+              value={isCustomMode ? "custom" : (isKnownModel ? currentModel : "custom")}
               onChange={(e) => {
                 if (e.target.value === "custom") {
-                  setSettings({ ...settings, MODEL: "openrouter/free" });
+                  setCustomSelected(true);
+                  if (isKnownModel) {
+                    setSettings({ ...settings, MODEL: "" });
+                  }
                 } else {
+                  setCustomSelected(false);
                   setSettings({ ...settings, MODEL: e.target.value });
                 }
               }}
@@ -76,11 +72,11 @@ export default function SettingsDrawer({
               <option value="custom">Custom Model...</option>
             </select>
             
-            {!isKnownModel && (
+            {isCustomMode && (
               <input
                 type="text"
-                placeholder="Enter custom model identifier"
-                value={currentModel}
+                placeholder="Enter custom model identifier (e.g. anthropic/claude-3.5-sonnet)"
+                value={settings.MODEL || ""}
                 onChange={(e) => setSettings({ ...settings, MODEL: e.target.value })}
                 style={{ marginTop: "0.5rem" }}
               />
@@ -88,32 +84,6 @@ export default function SettingsDrawer({
             
             <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
               Select which model to use for job post extraction and resume tailoring.
-            </small>
-          </div>
-
-          <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)" }} />
-
-          <div className="form-group">
-            <label>Gmail Address</label>
-            <input
-              type="email"
-              placeholder="your-email@gmail.com"
-              value={settings.GMAIL_USER}
-              onChange={(e) => setSettings({ ...settings, GMAIL_USER: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Gmail App Password</label>
-            <input
-              type="password"
-              placeholder={hasGmailConfig ? "••••••••••••••••••••" : "Paste Gmail App Password"}
-              value={settings.GMAIL_APP_PASSWORD}
-              onChange={(e) => setSettings({ ...settings, GMAIL_APP_PASSWORD: e.target.value })}
-            />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Must be a 16-character Google App Password. Normal password will fail.
             </small>
           </div>
 

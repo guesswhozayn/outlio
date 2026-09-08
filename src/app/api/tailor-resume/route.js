@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import { chatCompletion, DEFAULT_MODEL } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { latexCode, jobDescription, model, userModel } = await req.json();
 
     if (!latexCode) {
@@ -47,18 +54,19 @@ ${latexCode}
       ],
     });
 
-    // Strip markdown formatting if the model included it
-    responseText = responseText.trim();
-    if (responseText.startsWith('```latex')) {
-      responseText = responseText.substring(responseText.indexOf('\n') + 1);
-    } else if (responseText.startsWith('```')) {
-      responseText = responseText.substring(responseText.indexOf('\n') + 1);
-    }
-    if (responseText.endsWith('```')) {
-      responseText = responseText.substring(0, responseText.lastIndexOf('```'));
+    // Strip markdown formatting or conversational commentary
+    let cleanLatex = responseText.trim();
+    const fenceMatch = cleanLatex.match(/```(?:latex)?\s*([\s\S]*?)```/i);
+    if (fenceMatch) {
+      cleanLatex = fenceMatch[1];
+    } else {
+      const docMatch = cleanLatex.match(/(\\documentclass[\s\S]*?\\end\{document\})/i);
+      if (docMatch) {
+        cleanLatex = docMatch[1];
+      }
     }
 
-    return NextResponse.json({ latex: responseText.trim() });
+    return NextResponse.json({ latex: cleanLatex.trim() });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

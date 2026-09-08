@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import { chatCompletion, extractJson, DEFAULT_MODEL } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { postText, image, mimeType, model, userModel } = await req.json();
 
     const selectedModel = model || userModel || DEFAULT_MODEL;
