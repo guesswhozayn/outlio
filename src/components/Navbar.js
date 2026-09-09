@@ -44,7 +44,7 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
           <Mail size={18} className="nav-logo-icon" />
         </div>
         <div>
-          <h1 className="nav-title">AutoMailer</h1>
+          <h1 className="nav-title">Outlio</h1>
         </div>
       </div>
       <div className="nav-actions">

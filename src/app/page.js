@@ -26,10 +26,10 @@ export default function Home() {
     return (
       <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '3rem 2rem' }}>
-          <div className="logo-icon" style={{ marginBottom: '1rem', width: '48px', height: '48px' }}>AM</div>
-          <h2 style={{ marginBottom: '0.5rem', fontFamily: 'var(--font-mono)' }}>AutoMailer</h2>
+          <div className="logo-icon" style={{ marginBottom: '1rem', width: '48px', height: '48px' }}>O</div>
+          <h2 style={{ marginBottom: '0.5rem', fontFamily: 'var(--font-mono)' }}>Outlio</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-            Sign in with Google to securely sync your configuration across devices.
+            Sign in with Google to securely sync your Outlio workspace across devices.
           </p>
           <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => signIn("google")}>
             Sign in with Google
@@ -63,6 +63,7 @@ export default function Home() {
           isParsing={am.isParsing}
           screenshotData={am.screenshotData}
           handleParsePost={am.handleParsePost}
+          isSharedFromLinkedIn={am.isSharedFromLinkedIn}
         />
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
