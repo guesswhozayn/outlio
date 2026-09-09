@@ -99,7 +99,6 @@ export default function Home() {
               <HistoryTab
                 history={am.history}
                 setFields={am.setFields}
-                setIsColdEmail={am.setIsColdEmail}
                 setIsFollowUp={am.setIsFollowUp}
                 setActiveTab={am.setActiveTab}
                 setIsManuallyEdited={am.setIsManuallyEdited}
@@ -110,10 +109,6 @@ export default function Home() {
               <EmailPreviewTab
                 isFollowUp={am.isFollowUp}
                 setIsFollowUp={am.setIsFollowUp}
-                isColdEmail={am.isColdEmail}
-                setIsColdEmail={am.setIsColdEmail}
-                coldEmailRole={am.coldEmailRole}
-                setColdEmailRole={am.setColdEmailRole}
                 fields={am.fields}
                 setFields={am.setFields}
                 subject={am.subject}

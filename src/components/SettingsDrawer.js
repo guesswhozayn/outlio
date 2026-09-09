@@ -202,7 +202,7 @@ export default function SettingsDrawer({
                   <li>Open Apple <strong>Shortcuts</strong> app &rarr; tap <strong>+</strong> (New Shortcut).</li>
                   <li>Tap (ⓘ) Details &rarr; turn ON <strong>Show in Share Sheet</strong> (Accepts: Text, URLs).</li>
                   <li>Add action: <strong>URL Encode</strong> &rarr; select <em>Shortcut Input</em>.</li>
-                  <li>Add action: <strong>URL</strong> &rarr; enter: <code style={{ fontSize: "0.7rem", background: "var(--surface-active)", padding: "1px 4px", borderRadius: "3px" }}>{webappPrefix}[URL Encoded Text]</code></li>
+                  <li>Add action: <strong>URL</strong> &rarr; enter: <code style={{ fontSize: "0.7rem", background: "var(--surface-active)", padding: "2px 4px", borderRadius: "3px", wordBreak: "break-all", overflowWrap: "anywhere", display: "inline" }}>{webappPrefix}[URL Encoded Text]</code></li>
                   <li>Add action: <strong>Open URLs</strong> &rarr; select <em>URL</em>.</li>
                 </ol>
 
