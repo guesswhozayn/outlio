@@ -19,7 +19,7 @@ export default function JobInput({
     <div className="card" style={{ height: "100%" }}>
       <div className="card-header">
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div className="card-title">LinkedIn Post / Job Description</div>
+          <div className="card-title">Paste Job Description</div>
           {isSharedFromLinkedIn && (
             <span
               style={{
