@@ -45,11 +45,12 @@ export function useAutoMailer() {
   const imageInputRef = useRef(null);
   const [screenshotData, setScreenshotData] = useState(null);
   const [screenshotName, setScreenshotName] = useState("");
+  const [isSharedFromLinkedIn, setIsSharedFromLinkedIn] = useState(false);
 
-  const addLog = (message, type = "info") => {
+  const addLog = useCallback((message, type = "info") => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, { timestamp, message, type }]);
-  };
+  }, []);
 
   const fetchAvailableModels = useCallback(async () => {
     setIsFetchingModels(true);
@@ -71,13 +72,94 @@ export function useAutoMailer() {
     setSettingsOpen(open);
   }, [availableModels.length, fetchAvailableModels]);
 
+  const handleParsePost = useCallback(async (overrideText, overrideModel) => {
+    const textToParse = typeof overrideText === "string" ? overrideText : postText;
+    if (!textToParse.trim() && !screenshotData) return;
+    setIsParsing(true);
+    addLog("Sending to AI extractor...", "info");
+    
+    const base64Image = screenshotData ? screenshotData.split(",")[1] : null;
+    const mimeType = screenshotData ? screenshotData.split(";")[0].split(":")[1] : null;
+
+    try {
+      const res = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postText: textToParse,
+          image: base64Image,
+          mimeType: mimeType,
+          model: overrideModel || settings.MODEL || "openrouter/free"
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to parse post");
+
+      const newFields = {
+        email: data.email || "",
+        company: data.company || "",
+        jobTitle: data.jobTitle || "",
+        recipientName: data.recipientName || "Hiring Team",
+        skills: data.skills || "",
+        comprehensiveSkills: data.comprehensiveSkills || "",
+        keyRequirements: Array.isArray(data.keyRequirements) ? data.keyRequirements : []
+      };
+
+      setFields(newFields);
+      setIsManuallyEdited(false);
+      setIsFollowUp(false);
+      setIsColdEmail(false);
+      setActiveTab("preview");
+      addLog("Job details extracted successfully!", "success");
+
+    } catch (error) {
+      addLog(`Error parsing post: ${error.message}`, "error");
+    } finally {
+      setIsParsing(false);
+    }
+  }, [postText, screenshotData, settings.MODEL, addLog]);
+
+  const checkSharedJob = useCallback(async (currentSettings) => {
+    if (typeof window === "undefined") return;
+    try {
+      const sharedRaw = localStorage.getItem("outlio_shared_job");
+      if (!sharedRaw) return;
+
+      const sharedObj = JSON.parse(sharedRaw);
+      if (sharedObj && sharedObj.text) {
+        setPostText(sharedObj.text);
+        setIsSharedFromLinkedIn(true);
+        localStorage.removeItem("outlio_shared_job");
+
+        const shouldAutoParse = sessionStorage.getItem("outlio_trigger_auto_parse");
+        sessionStorage.removeItem("outlio_trigger_auto_parse");
+
+        if (window.location.search.includes("shared=true")) {
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+
+        addLog("Loaded shared LinkedIn post into workspace.", "success");
+
+        if (shouldAutoParse === "true") {
+          addLog("Automatically extracting details from shared post...", "info");
+          const activeModel = currentSettings?.MODEL || settings.MODEL || "openrouter/free";
+          handleParsePost(sharedObj.text, activeModel);
+        }
+      }
+    } catch (err) {
+      console.warn("Error reading shared job from storage:", err);
+    }
+  }, [handleParsePost, settings.MODEL, addLog]);
+
   const loadSettings = useCallback(async () => {
     try {
       const email = session?.user?.email;
       let localSettings = {};
       if (email) {
         try {
-          localSettings = await localforage.getItem(`automailer_settings_${email}`) || {};
+          localSettings = (await localforage.getItem(`outlio_settings_${email}`)) || (await localforage.getItem(`automailer_settings_${email}`)) || {};
         } catch (err) {
           console.warn("Browser storage access denied:", err);
         }
@@ -97,7 +179,7 @@ export function useAutoMailer() {
 
       if (email && Object.keys(finalSettings).length > 0) {
         try {
-          await localforage.setItem(`automailer_settings_${email}`, finalSettings);
+          await localforage.setItem(`outlio_settings_${email}`, finalSettings);
         } catch (err) {
           console.warn("Browser storage access denied:", err);
         }
@@ -123,14 +205,14 @@ export function useAutoMailer() {
       fetchAvailableModels();
       
       try {
-        const storedHistory = await localforage.getItem("automailer_history");
+        const storedHistory = (await localforage.getItem("outlio_history")) || (await localforage.getItem("automailer_history"));
         if (storedHistory) setHistory(storedHistory);
       } catch (err) {
         console.warn("Browser storage access denied for history:", err);
       }
 
       try {
-        const storedResume = await localforage.getItem("automailer_base_resume");
+        const storedResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));
         if (storedResume) {
           setResumeFile(storedResume);
           setResumeExists(true);
@@ -139,18 +221,21 @@ export function useAutoMailer() {
       } catch (err) {
         console.warn("Browser storage access denied for resume:", err);
       }
+
+      checkSharedJob(finalSettings);
     } catch (e) {
       console.error(e);
     }
-  }, [session?.user?.email, session?.user?.name, fetchAvailableModels]);
+  }, [session, fetchAvailableModels, checkSharedJob, addLog]);
 
   useEffect(() => {
     if (status === "authenticated") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadSettings();
       addLog("Dashboard initialized. Ready to process jobs.", "info");
+      checkSharedJob();
     }
-  }, [status, loadSettings]);
+  }, [status, loadSettings, checkSharedJob, addLog]);
 
   const compiled = useMemo(() => {
     const pTitle = fields.jobTitle || "[Position Title]";
@@ -251,7 +336,7 @@ export function useAutoMailer() {
       const email = session?.user?.email;
       if (email) {
         try {
-          await localforage.setItem(`automailer_settings_${email}`, settings);
+          await localforage.setItem(`outlio_settings_${email}`, settings);
         } catch (err) {
           console.warn("Browser storage access denied:", err);
         }
@@ -298,7 +383,7 @@ export function useAutoMailer() {
     }
     setIsUploading(true);
     try {
-      await localforage.setItem("automailer_base_resume", file);
+      await localforage.setItem("outlio_base_resume", file);
       setResumeFile(file);
       setResumeExists(true);
       addLog("Resume saved securely in browser.", "success");
@@ -322,53 +407,6 @@ export function useAutoMailer() {
       setScreenshotData(reader.result);
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleParsePost = async () => {
-    if (!postText.trim() && !screenshotData) return;
-    setIsParsing(true);
-    addLog("Sending to AI extractor...", "info");
-    
-    const base64Image = screenshotData ? screenshotData.split(",")[1] : null;
-    const mimeType = screenshotData ? screenshotData.split(";")[0].split(":")[1] : null;
-
-    try {
-      const res = await fetch("/api/parse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postText,
-          image: base64Image,
-          mimeType: mimeType,
-          model: settings.MODEL || "openrouter/free"
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to parse post");
-
-      const newFields = {
-        email: data.email || "",
-        company: data.company || "",
-        jobTitle: data.jobTitle || "",
-        recipientName: data.recipientName || "Hiring Team",
-        skills: data.skills || "",
-        comprehensiveSkills: data.comprehensiveSkills || "",
-        keyRequirements: Array.isArray(data.keyRequirements) ? data.keyRequirements : []
-      };
-
-      setFields(newFields);
-      setIsManuallyEdited(false);
-      setIsFollowUp(false);
-      setIsColdEmail(false);
-      setActiveTab("preview");
-      addLog("Job details extracted successfully!", "success");
-
-    } catch (error) {
-      addLog(`Error parsing post: ${error.message}`, "error");
-    } finally {
-      setIsParsing(false);
-    }
   };
 
   const handleTailorResume = async () => {
@@ -442,7 +480,7 @@ export function useAutoMailer() {
       const defaultFileName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
       pdfBlob.name = defaultFileName;
       
-      await localforage.setItem("automailer_tailored_resume", pdfBlob);
+      await localforage.setItem("outlio_tailored_resume", pdfBlob);
       setResumeFile(pdfBlob);
       setResumeExists(true);
       addLog("Tailored resume generated and attached successfully!", "success");
@@ -490,11 +528,12 @@ export function useAutoMailer() {
         };
         const updatedHistory = [newEntry, ...history];
         setHistory(updatedHistory);
-        localforage.setItem("automailer_history", updatedHistory).catch(console.warn);
+        localforage.setItem("outlio_history", updatedHistory).catch(console.warn);
 
         // Cleanup after successful send
+        localforage.removeItem("outlio_tailored_resume").catch(console.warn);
         localforage.removeItem("automailer_tailored_resume").catch(console.warn);
-        const baseResume = await localforage.getItem("automailer_base_resume");
+        const baseResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));
         if (baseResume) {
           setResumeFile(baseResume);
           setResumeExists(true);
@@ -504,6 +543,7 @@ export function useAutoMailer() {
         }
 
         setPostText("");
+        setIsSharedFromLinkedIn(false);
         setScreenshotData(null);
         setScreenshotName("");
         setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [] });
@@ -522,6 +562,7 @@ export function useAutoMailer() {
     session, status,
     mounted,
     postText, setPostText,
+    isSharedFromLinkedIn, setIsSharedFromLinkedIn,
     fields, setFields,
     userProfile, setUserProfile,
     subject, setSubject,
@@ -553,3 +594,5 @@ export function useAutoMailer() {
     handleSaveSettings,
   };
 }
+
+export const useOutlio = useAutoMailer;

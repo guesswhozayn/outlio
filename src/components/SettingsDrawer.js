@@ -161,6 +161,25 @@ export default function SettingsDrawer({
             </small>
           </div>
 
+          <div
+            style={{
+              padding: "0.875rem",
+              borderRadius: "var(--radius-md)",
+              background: "rgba(10, 102, 194, 0.08)",
+              border: "1px solid rgba(10, 102, 194, 0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.35rem",
+            }}
+          >
+            <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              📱 Mobile PWA & LinkedIn Share
+            </div>
+            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>
+              Install Outlio to your phone&apos;s home screen via browser menu (<strong>Install App</strong> or <strong>Add to Home screen</strong>). Once installed, tap <strong>Share → Share via...</strong> on any LinkedIn post or job to send it directly into Outlio for automated detail extraction!
+            </p>
+          </div>
+
           <button type="submit" className="btn btn-primary" style={{ marginTop: "1rem" }} disabled={isSavingSettings}>
             {isSavingSettings ? "Saving Settings..." : "Save Settings"}
           </button>

@@ -92,7 +92,7 @@ export async function chatCompletion({ model = DEFAULT_MODEL, messages, maxRetri
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "HTTP-Referer": process.env.NEXTAUTH_URL || "http://localhost:3000",
-          "X-Title": "AutoMailer",
+          "X-Title": "Outlio",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

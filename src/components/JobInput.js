@@ -1,4 +1,4 @@
-import { Zap, Image as ImageIcon } from "lucide-react";
+import { Zap, Image as ImageIcon, Share2 } from "lucide-react";
 
 export default function JobInput({
   postText,
@@ -13,11 +13,32 @@ export default function JobInput({
   isParsing,
   screenshotData,
   handleParsePost,
+  isSharedFromLinkedIn,
 }) {
   return (
     <div className="card" style={{ height: "100%" }}>
       <div className="card-header">
-        <div className="card-title">LinkedIn Post / Job Description</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className="card-title">LinkedIn Post / Job Description</div>
+          {isSharedFromLinkedIn && (
+            <span
+              style={{
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                padding: "0.15rem 0.5rem",
+                borderRadius: "9999px",
+                background: "rgba(10, 102, 194, 0.15)",
+                color: "#0a66c2",
+                border: "1px solid rgba(10, 102, 194, 0.3)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+              }}
+            >
+              <Share2 size={11} /> Shared from LinkedIn
+            </span>
+          )}
+        </div>
         <span className="char-counter">{postText.length} chars</span>
       </div>
 
