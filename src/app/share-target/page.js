@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback, useRef, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Share2, CheckCircle2, ExternalLink, Smartphone, Globe } from "lucide-react";
+import { Loader2, Share2, CheckCircle2, Smartphone } from "lucide-react";
 
 const emptySubscribe = () => () => {};
 
@@ -199,14 +199,13 @@ function ShareTargetContent() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "0.5rem",
                 textDecoration: "none",
                 padding: "0.75rem 1.25rem",
                 fontSize: "0.95rem",
                 fontWeight: 600,
               }}
             >
-              <ExternalLink size={18} /> Open in Web App
+              Open in Web App
             </a>
 
             <button
@@ -219,13 +218,12 @@ function ShareTargetContent() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "0.5rem",
                 padding: "0.6rem 1rem",
                 fontSize: "0.85rem",
                 color: "var(--text-secondary)",
               }}
             >
-              <Globe size={16} /> Continue in Safari Browser
+              Continue in Safari Browser
             </button>
           </div>
 

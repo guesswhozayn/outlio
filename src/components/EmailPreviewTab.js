@@ -1,5 +1,3 @@
-import { Zap, File, Send } from "lucide-react";
-
 export default function EmailPreviewTab({
   isFollowUp,
   setIsFollowUp,
@@ -72,10 +70,10 @@ export default function EmailPreviewTab({
           </div>
           <div className="attachment-actions" style={{ display: "flex", gap: "0.5rem" }}>
             <button className="btn btn-secondary" style={{padding: "0.35rem 0.6rem", fontSize: "0.75rem"}} onClick={handleTailorResume} disabled={isTailoring}>
-              {isTailoring ? "Tailoring..." : <><Zap size={12} /> Tailor Resume</>}
+              {isTailoring ? "Tailoring..." : "Tailor Resume"}
             </button>
             <button className="btn btn-secondary" style={{padding: "0.35rem 0.6rem", fontSize: "0.75rem"}} onClick={handleUploadClick}>
-              {isUploading ? "Uploading..." : <><File size={12} /> Upload</>}
+              {isUploading ? "Uploading..." : "Upload"}
             </button>
           </div>
           <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".pdf" onChange={handleFileChange} />
@@ -91,9 +89,7 @@ export default function EmailPreviewTab({
               <div className="spinner"></div> Sending...
             </>
           ) : (
-            <>
-              <Send size={16} /> Send
-            </>
+            "Send"
           )}
         </button>
       </div>

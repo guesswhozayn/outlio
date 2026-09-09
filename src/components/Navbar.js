@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mail, Settings, LogOut, Sun, Moon, CheckCircle2, ChevronDown } from "lucide-react";
+import { Mail, Settings, Sun, Moon, CheckCircle2, ChevronDown } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, session }) {
@@ -270,7 +270,6 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "0.6rem",
                       width: "100%",
                       padding: "0.5rem 0.6rem",
                       background: "transparent",
@@ -284,7 +283,6 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
                     onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
-                    <Settings size={15} style={{ color: "var(--text-secondary)" }} />
                     Configuration Settings
                   </button>
 
@@ -293,7 +291,6 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "0.6rem",
                       width: "100%",
                       padding: "0.5rem 0.6rem",
                       background: "transparent",
@@ -307,7 +304,6 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
                     onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 0, 0, 0.08)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
-                    <LogOut size={15} style={{ color: "var(--accent-rose)" }} />
                     Sign Out
                   </button>
                 </div>

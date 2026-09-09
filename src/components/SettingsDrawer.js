@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from "react";
 import { FALLBACK_FREE_MODELS } from "@/lib/openrouter";
-import { Smartphone, Copy, Check, ExternalLink } from "lucide-react";
+import { Smartphone } from "lucide-react";
 
 const emptySubscribe = () => () => {};
 
@@ -210,7 +210,7 @@ export default function SettingsDrawer({
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+                    style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem", display: "inline-flex", alignItems: "center" }}
                     onClick={() => {
                       if (typeof navigator !== "undefined" && navigator.clipboard) {
                         navigator.clipboard.writeText(webappPrefix);
@@ -219,17 +219,16 @@ export default function SettingsDrawer({
                       }
                     }}
                   >
-                    {copiedShortcutUrl ? <Check size={13} style={{ color: "var(--success, #10b981)" }} /> : <Copy size={13} />}
                     {copiedShortcutUrl ? "Copied Web App URL!" : "Copy Web App URL"}
                   </button>
 
                   <a
                     href={`${webappPrefix}test`}
                     className="btn btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem", display: "inline-flex", alignItems: "center", gap: "0.35rem", textDecoration: "none", color: "var(--text-secondary)" }}
+                    style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem", display: "inline-flex", alignItems: "center", textDecoration: "none", color: "var(--text-secondary)" }}
                     title="Tests if your iPhone opens the installed Web App"
                   >
-                    <ExternalLink size={13} /> Test Web App Launch
+                    Test Web App Launch
                   </a>
                 </div>
                 <small style={{ display: "block", marginTop: "0.4rem", color: "var(--text-muted)", fontSize: "0.7rem" }}>
