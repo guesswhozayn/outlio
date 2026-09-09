@@ -21,8 +21,22 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: "Outlio",
-  description: "AI-powered job application outreach and resume tailoring.",
+  title: "Outlio — AI Job Application Outreach & Resume Tailoring",
+  description: "Turn LinkedIn job posts into tailored applications in seconds. AI deep extraction, recruiter-proven emails under 65 words, automated LaTeX resume tailoring, and 1-click Gmail sending.",
+  keywords: ["AI job applications", "LinkedIn post extractor", "resume tailoring", "cold email outreach", "Gmail 1-click apply", "job hunter tool"],
+  authors: [{ name: "Outlio" }],
+  openGraph: {
+    title: "Outlio — AI Job Application Outreach & Resume Tailoring",
+    description: "Turn LinkedIn job posts into tailored applications in seconds with automated resume tailoring and 1-click Gmail dispatch.",
+    url: "https://outlioai.vercel.app",
+    siteName: "Outlio",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Outlio — AI Job Application Outreach & Resume Tailoring",
+    description: "Turn LinkedIn job posts into tailored applications in seconds with automated resume tailoring and 1-click Gmail dispatch.",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

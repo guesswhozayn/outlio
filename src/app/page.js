@@ -1,6 +1,7 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import Navbar from "@/components/Navbar";
 import JobInput from "@/components/JobInput";
@@ -8,10 +9,13 @@ import SettingsDrawer from "@/components/SettingsDrawer";
 import ExtractedFieldsTab from "@/components/ExtractedFieldsTab";
 import HistoryTab from "@/components/HistoryTab";
 import EmailPreviewTab from "@/components/EmailPreviewTab";
-
+import LandingPage from "@/components/LandingPage";
 import { useAutoMailer } from "@/hooks/useAutoMailer";
-export default function Home() {
+
+function HomeContent() {
   const { theme, setTheme } = useTheme();
+  const searchParams = useSearchParams();
+  const showLanding = searchParams.get("view") === "landing";
   const am = useAutoMailer();
 
   if (am.status === "loading") {
@@ -22,21 +26,8 @@ export default function Home() {
     );
   }
 
-  if (am.status === "unauthenticated") {
-    return (
-      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '3rem 2rem' }}>
-          <div className="logo-icon" style={{ marginBottom: '1rem', width: '48px', height: '48px' }}>O</div>
-          <h2 style={{ marginBottom: '0.5rem', fontFamily: 'var(--font-mono)' }}>Outlio</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-            Sign in with Google to securely sync your Outlio workspace across devices.
-          </p>
-          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => signIn("google")}>
-            Sign in with Google
-          </button>
-        </div>
-      </div>
-    );
+  if (am.status === "unauthenticated" || showLanding) {
+    return <LandingPage session={am.session} />;
   }
 
   return (
@@ -147,3 +138,18 @@ export default function Home() {
     </div>
   );
 }
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+          <div className="spinner spinner-lg"></div>
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
+  );
+}
+
