@@ -139,6 +139,7 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
               </div>
 
               <span
+                className="user-pill-name"
                 style={{
                   fontSize: "0.8rem",
                   fontWeight: 500,
@@ -169,6 +170,7 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
                   top: "calc(100% + 8px)",
                   right: 0,
                   width: "260px",
+                  maxWidth: "calc(100vw - 2rem)",
                   background: "var(--bg-secondary)",
                   backdropFilter: "blur(20px)",
                   WebkitBackdropFilter: "blur(20px)",
