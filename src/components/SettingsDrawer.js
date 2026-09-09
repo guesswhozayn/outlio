@@ -169,14 +169,15 @@ export default function SettingsDrawer({
               border: "1px solid rgba(10, 102, 194, 0.25)",
               display: "flex",
               flexDirection: "column",
-              gap: "0.35rem",
+              gap: "0.5rem",
             }}
           >
             <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              📱 Mobile PWA & LinkedIn Share
+              📱 Mobile & LinkedIn Share
             </div>
             <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>
-              Install Outlio to your phone&apos;s home screen via browser menu (<strong>Install App</strong> or <strong>Add to Home screen</strong>). Once installed, tap <strong>Share → Share via...</strong> on any LinkedIn post or job to send it directly into Outlio for automated detail extraction!
+              <strong>Android:</strong> Tap browser menu &rarr; <em>Install App</em>. Then tap <em>Share &rarr; Share via... &rarr; Outlio</em> on LinkedIn.<br />
+              <strong>iPhone:</strong> In Apple <em>Shortcuts</em> app, add a shortcut to receive URLs/Text in Share Sheet and open: <code style={{ fontSize: "0.72rem", background: "var(--surface-active)", padding: "2px 4px", borderRadius: "4px" }}>https://outlioai.vercel.app/share-target?text=[Input]</code>.
             </p>
           </div>
 

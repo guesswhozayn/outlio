@@ -1,4 +1,4 @@
-import { Zap, Image as ImageIcon, Share2 } from "lucide-react";
+import { Zap, Image as ImageIcon, Share2, ClipboardPaste } from "lucide-react";
 
 export default function JobInput({
   postText,
@@ -55,7 +55,31 @@ export default function JobInput({
         {logs.length > 0 && logs[logs.length - 1].message}
       </div>
 
-      <div className="flex-row" style={{ marginBottom: "1rem", gap: "1rem", alignItems: "center" }}>
+      <div className="flex-row" style={{ marginBottom: "1rem", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }}
+          onClick={async () => {
+            try {
+              if (navigator.clipboard && navigator.clipboard.readText) {
+                const clipText = await navigator.clipboard.readText();
+                if (clipText && clipText.trim()) {
+                  setPostText(clipText);
+                  if (clipText.includes("linkedin.com/")) {
+                    handleParsePost(clipText);
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn("Clipboard access denied or unavailable:", err);
+            }
+          }}
+          title="Paste link or text from clipboard and auto-extract"
+        >
+          <ClipboardPaste size={14} /> Paste Link
+        </button>
+
         <button className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }} onClick={handleImageUploadClick}>
           <ImageIcon size={14} /> Upload
         </button>

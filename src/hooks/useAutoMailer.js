@@ -73,9 +73,33 @@ export function useAutoMailer() {
   }, [availableModels.length, fetchAvailableModels]);
 
   const handleParsePost = useCallback(async (overrideText, overrideModel) => {
-    const textToParse = typeof overrideText === "string" ? overrideText : postText;
+    let textToParse = typeof overrideText === "string" ? overrideText : postText;
     if (!textToParse.trim() && !screenshotData) return;
     setIsParsing(true);
+
+    // If input contains a LinkedIn URL and is relatively short, auto-resolve full details first
+    if (/https?:\/\/(?:[a-zA-Z0-9-]+\.)?linkedin\.com\/[^\s]+/i.test(textToParse) && textToParse.length < 600) {
+      addLog("Resolving LinkedIn link details...", "info");
+      try {
+        const fetchRes = await fetch("/api/fetch-linkedin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: textToParse }),
+        });
+        if (fetchRes.ok) {
+          const fetchData = await fetchRes.json();
+          if (fetchData.text && fetchData.text.length > textToParse.length) {
+            textToParse = fetchData.text;
+            setPostText(textToParse);
+            setIsSharedFromLinkedIn(true);
+            addLog("Loaded full post details from LinkedIn!", "success");
+          }
+        }
+      } catch (err) {
+        console.warn("Auto-resolve error:", err);
+      }
+    }
+
     addLog("Sending to AI extractor...", "info");
     
     const base64Image = screenshotData ? screenshotData.split(",")[1] : null;
