@@ -1,4 +1,4 @@
-import { Zap, Image as ImageIcon, Share2, ClipboardPaste } from "lucide-react";
+import { Share2 } from "lucide-react";
 
 export default function JobInput({
   postText,
@@ -77,11 +77,11 @@ export default function JobInput({
           }}
           title="Paste link or text from clipboard and auto-extract"
         >
-          <ClipboardPaste size={14} /> Paste Link
+          Paste Link
         </button>
 
         <button className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }} onClick={handleImageUploadClick}>
-          <ImageIcon size={14} /> Upload
+          Upload
         </button>
         <input type="file" ref={imageInputRef} style={{ display: "none" }} accept="image/*" onChange={handleImageChange} />
         {screenshotName && <span style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>{screenshotName}</span>}
@@ -111,9 +111,7 @@ export default function JobInput({
             <div className="spinner"></div> Extracting details...
           </>
         ) : (
-          <>
-            <Zap size={16} /> Extract
-          </>
+          "Extract"
         )}
       </button>
     </div>

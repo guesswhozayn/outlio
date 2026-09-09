@@ -264,38 +264,43 @@ export function useAutoMailer() {
     const cName = fields.company ? fields.company : "your company";
 
     const uName = userProfile.name || "[Your Name]";
-    const uPhone = fields.userPhone || userProfile.phone || "[Phone Number]";
-    const uLink = fields.userLinkedin || userProfile.linkedin || "[LinkedIn Profile]";
-    const uGithub = userProfile.github ? `\n${userProfile.github}` : "";
-    const uPortfolio = userProfile.portfolio ? `\n${userProfile.portfolio}` : "";
+    const uPhone = fields.userPhone || userProfile.phone || "";
+    const uLink = fields.userLinkedin || userProfile.linkedin || "";
     
-    let salutation = "Dear Hiring Team,";
+    let salutation = "Hi Hiring Team,";
     if (fields.recipientName && fields.recipientName.toLowerCase() !== "hiring team") {
-      salutation = `Dear ${fields.recipientName},`;
+      salutation = `Hi ${fields.recipientName},`;
     }
 
+    const contactParts = [];
+    if (uPhone && uPhone !== "[Phone Number]") contactParts.push(uPhone);
+    if (uLink && uLink !== "[LinkedIn Profile]") contactParts.push(uLink);
+    if (userProfile.github) contactParts.push(userProfile.github);
+    if (userProfile.portfolio) contactParts.push(userProfile.portfolio);
+    const contactBlock = contactParts.length > 0 ? `\n${contactParts.join(" | ")}` : "";
+
     const reqs = Array.isArray(fields.keyRequirements) && fields.keyRequirements.length > 0
-      ? fields.keyRequirements
+      ? fields.keyRequirements.slice(0, 3)
       : [];
 
     let body = "";
     let sub = "";
 
     if (isFollowUp) {
-      const followUpSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "this field";
-      body = `${salutation}\n\nI am writing to follow up on my application for the ${pTitle} role at ${cName}. I remain very enthusiastic about joining your team and contributing my expertise in ${followUpSkills}.\n\nPlease let me know if you need any additional information or work samples from my end. I have re-attached my resume for your convenience.\n\nThank you again for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
-      sub = `Following up - Application for ${pTitle} - ${uName}`;
+      const followUpSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "this space";
+      body = `${salutation}\n\nQuick follow-up on my application for the ${pTitle} role at ${cName}. I remain genuinely enthusiastic about what your team is building and eager to contribute my background in ${followUpSkills}.\n\nI've re-attached my resume for convenience. Would you be open to a brief 10-minute intro chat this week?\n\nBest,\n\n${uName}${contactBlock}`;
+      sub = `Following up: ${pTitle} – ${uName}`;
     } else {
-      const standardSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "relevant technologies";
+      const standardSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "modern tech stacks";
       let reqSection = "";
       if (reqs.length > 0) {
-        reqSection = `\n\nMy background directly aligns with the key requirements of this position:\n` + reqs.map(r => `• ${r.replace(/^[•\-\*]\s*/, '')}`).join("\n");
+        reqSection = `\n\nWhere I can hit the ground running:\n` + reqs.map(r => `• ${r.replace(/^[•\-\*]\s*/, '')}`).join("\n");
       } else if (fields.comprehensiveSkills) {
-        reqSection = `\n\nMy technical expertise spans ${fields.comprehensiveSkills}, matching the core qualifications outlined in your job posting.`;
+        reqSection = `\n\nCore toolkit: ${fields.comprehensiveSkills}.`;
       }
 
-      body = `${salutation}\n\nI am writing to express my strong interest in the ${pTitle} position at ${cName}. Having worked extensively with ${standardSkills}, I am confident in my ability to bring immediate value to your team.${reqSection}\n\nI have attached my resume for your review. I would welcome the opportunity to discuss how my background and technical skills align with your team's goals.\n\nThank you for your time and consideration.\n\nBest regards,\n\n${uName}\n${uPhone}\n${uLink}${uGithub}${uPortfolio}`;
-      sub = `Application for ${pTitle} - ${uName}`;
+      body = `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and wanted to put forward my application. With hands-on expertise in ${standardSkills}, I specialize in turning complex requirements into clean, scalable software.${reqSection}\n\nResume attached. Do you have 10 minutes this week for a brief conversation to see if we're a great mutual fit?\n\nBest,\n\n${uName}${contactBlock}`;
+      sub = `Application: ${pTitle} – ${uName}`;
     }
 
     return { subject: sub, body };
