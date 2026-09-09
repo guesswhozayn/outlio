@@ -1,8 +1,5 @@
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { FALLBACK_FREE_MODELS } from "@/lib/openrouter";
-import { Smartphone } from "lucide-react";
-
-const emptySubscribe = () => () => {};
 
 export default function SettingsDrawer({
   settingsOpen,
@@ -18,7 +15,6 @@ export default function SettingsDrawer({
   const currentModel = settings.MODEL || "openrouter/free";
   const isKnownModel = modelOptions.some(m => m.name === currentModel);
   const [customSelected, setCustomSelected] = useState(false);
-
   const isCustomMode = customSelected || (!isKnownModel && Boolean(currentModel));
 
   return (

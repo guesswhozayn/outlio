@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Mail, Settings, Sun, Moon, CheckCircle2, ChevronDown } from "lucide-react";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 
 export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, session }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -262,6 +263,28 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
                 <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", margin: "0.5rem 0" }} />
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <Link
+                    href="/landing"
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      width: "100%",
+                      padding: "0.5rem 0.6rem",
+                      background: "transparent",
+                      border: "none",
+                      borderRadius: "var(--radius-sm)",
+                      color: "var(--text-primary)",
+                      fontSize: "0.8rem",
+                      textDecoration: "none",
+                      textAlign: "left"
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    Landing Page
+                  </Link>
+
                   <button
                     onClick={() => {
                       setMenuOpen(false);
