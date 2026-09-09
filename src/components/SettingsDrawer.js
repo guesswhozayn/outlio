@@ -18,15 +18,6 @@ export default function SettingsDrawer({
   const currentModel = settings.MODEL || "openrouter/free";
   const isKnownModel = modelOptions.some(m => m.name === currentModel);
   const [customSelected, setCustomSelected] = useState(false);
-  const [copiedShortcutUrl, setCopiedShortcutUrl] = useState(false);
-
-  const currentHost = useSyncExternalStore(
-    emptySubscribe,
-    () => (typeof window !== "undefined" ? window.location.host : "outlioai.vercel.app"),
-    () => "outlioai.vercel.app"
-  );
-
-  const webappPrefix = `webapp://${currentHost}/share-target?text=`;
 
   const isCustomMode = customSelected || (!isKnownModel && Boolean(currentModel));
 
@@ -173,73 +164,8 @@ export default function SettingsDrawer({
             </small>
           </div>
 
-          <div
-            style={{
-              padding: "1rem",
-              borderRadius: "var(--radius-md)",
-              background: "rgba(10, 102, 194, 0.08)",
-              border: "1px solid rgba(10, 102, 194, 0.25)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.75rem",
-            }}
-          >
-            <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <Smartphone size={16} style={{ color: "var(--accent-primary, #6366f1)" }} /> Mobile & LinkedIn Share
-            </div>
-
-            <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              <p style={{ margin: "0 0 0.5rem 0" }}>
-                <strong>Android:</strong> Tap browser menu &rarr; <em>Install App</em>. Then tap <em>Share &rarr; Share via... &rarr; Outlio</em> on any LinkedIn post.
-              </p>
-
-              <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "0.5rem" }}>
-                <p style={{ margin: "0 0 0.4rem 0", color: "var(--text-primary)", fontWeight: 600 }}>
-                  <strong>iPhone (Open directly in Web App instead of Safari):</strong>
-                </p>
-                <ol style={{ margin: "0 0 0.5rem 0", paddingLeft: "1.2rem", fontSize: "0.75rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                  <li>First, add Outlio to your Home Screen: In Safari, tap Share (⎙) &rarr; <em>Add to Home Screen</em>.</li>
-                  <li>Open Apple <strong>Shortcuts</strong> app &rarr; tap <strong>+</strong> (New Shortcut).</li>
-                  <li>Tap (ⓘ) Details &rarr; turn ON <strong>Show in Share Sheet</strong> (Accepts: Text, URLs).</li>
-                  <li>Add action: <strong>URL Encode</strong> &rarr; select <em>Shortcut Input</em>.</li>
-                  <li>Add action: <strong>URL</strong> &rarr; enter: <code style={{ fontSize: "0.7rem", background: "var(--surface-active)", padding: "2px 4px", borderRadius: "3px", wordBreak: "break-all", overflowWrap: "anywhere", display: "inline" }}>{webappPrefix}[URL Encoded Text]</code></li>
-                  <li>Add action: <strong>Open URLs</strong> &rarr; select <em>URL</em>.</li>
-                </ol>
-
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem", display: "inline-flex", alignItems: "center" }}
-                    onClick={() => {
-                      if (typeof navigator !== "undefined" && navigator.clipboard) {
-                        navigator.clipboard.writeText(webappPrefix);
-                        setCopiedShortcutUrl(true);
-                        setTimeout(() => setCopiedShortcutUrl(false), 2000);
-                      }
-                    }}
-                  >
-                    {copiedShortcutUrl ? "Copied Web App URL!" : "Copy Web App URL"}
-                  </button>
-
-                  <a
-                    href={`${webappPrefix}test`}
-                    className="btn btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem", display: "inline-flex", alignItems: "center", textDecoration: "none", color: "var(--text-secondary)" }}
-                    title="Tests if your iPhone opens the installed Web App"
-                  >
-                    Test Web App Launch
-                  </a>
-                </div>
-                <small style={{ display: "block", marginTop: "0.4rem", color: "var(--text-muted)", fontSize: "0.7rem" }}>
-                  💡 Using <code>webapp://</code> forces iOS to launch the installed Web App directly, avoiding Safari browser tabs.
-                </small>
-              </div>
-            </div>
-          </div>
-
           <button type="submit" className="btn btn-primary" style={{ marginTop: "1rem" }} disabled={isSavingSettings}>
-            {isSavingSettings ? "Saving Settings..." : "Save Settings"}
+            {isSavingSettings ? "Saving..." : "Save"}
           </button>
         </form>
       </div>

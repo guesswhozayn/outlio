@@ -77,7 +77,7 @@ export default function JobInput({
           }}
           title="Paste link or text from clipboard and auto-extract"
         >
-          Paste Link
+          Paste
         </button>
 
         <button className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }} onClick={handleImageUploadClick}>
