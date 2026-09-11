@@ -4,6 +4,33 @@ import { useSession } from "next-auth/react";
 
 const emptySubscribe = () => () => {};
 
+const fileToBase64 = async (fileOrBlob) => {
+  if (!fileOrBlob) return null;
+  if (typeof fileOrBlob === "string") {
+    return fileOrBlob.includes(",") ? fileOrBlob.split(",")[1] : fileOrBlob;
+  }
+  if (fileOrBlob instanceof ArrayBuffer) {
+    const uint8 = new Uint8Array(fileOrBlob);
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < uint8.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+  if (typeof fileOrBlob.arrayBuffer === "function") {
+    const buffer = await fileOrBlob.arrayBuffer();
+    const uint8 = new Uint8Array(buffer);
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < uint8.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+  return null;
+};
+
 export function useAutoMailer() {
   const { data: session, status } = useSession();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
@@ -233,9 +260,17 @@ export function useAutoMailer() {
       }
 
       try {
-        const storedResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));
-        if (storedResume) {
-          setResumeFile(storedResume);
+        const tailoredResume = await localforage.getItem("outlio_tailored_resume");
+        const baseResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));
+        
+        const isValidResume = (item) => Boolean(item && (item instanceof Blob || item instanceof ArrayBuffer || (typeof item === 'object' && (item.size > 0 || item.byteLength > 0))));
+
+        if (isValidResume(tailoredResume)) {
+          setResumeFile(tailoredResume);
+          setResumeExists(true);
+          addLog("Tailored resume loaded from browser storage.", "success");
+        } else if (isValidResume(baseResume)) {
+          setResumeFile(baseResume);
           setResumeExists(true);
           addLog("Default resume loaded from browser storage.", "success");
         }
@@ -493,18 +528,62 @@ export function useAutoMailer() {
     setIsSending(true);
     addLog(`Sending application to ${fields.email}...`, "info");
 
-    const formData = new FormData();
-    formData.append("toEmail", fields.email);
-    formData.append("subject", subject);
-    formData.append("emailBody", emailBody);
-    formData.append("gmailUser", settings.GMAIL_USER || session?.user?.email || "");
-    formData.append("gmailAppPassword", settings.GMAIL_APP_PASSWORD || "");
-    formData.append("userName", settings.USER_NAME || "");
-    const defaultFileName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
-    formData.append("resume", resumeFile, resumeFile.name || defaultFileName);
-
     try {
-      const res = await fetch("/api/send", { method: "POST", body: formData });
+      let resumeBase64 = null;
+      let resumeFileName = null;
+
+      if (resumeFile) {
+        resumeBase64 = await fileToBase64(resumeFile);
+        const defaultFileName = (settings.USER_NAME || "user")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9_-]/g, "_") + "_resume.pdf";
+        const rawName = resumeFile.name || defaultFileName;
+        resumeFileName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        if (!resumeFileName.toLowerCase().endsWith(".pdf")) {
+          resumeFileName += ".pdf";
+        }
+      }
+
+      // Fallback: if resumeFile state was lost or corrupted, attempt recovery from localforage
+      if (!resumeBase64 && resumeExists) {
+        const stored = (await localforage.getItem("outlio_tailored_resume")) ||
+          (await localforage.getItem("outlio_base_resume")) ||
+          (await localforage.getItem("automailer_base_resume"));
+        if (stored) {
+          resumeBase64 = await fileToBase64(stored);
+          const defaultFileName = (settings.USER_NAME || "user")
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-zA-Z0-9_-]/g, "_") + "_resume.pdf";
+          const rawName = stored.name || defaultFileName;
+          resumeFileName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
+          if (!resumeFileName.toLowerCase().endsWith(".pdf")) {
+            resumeFileName += ".pdf";
+          }
+        }
+      }
+
+      if (resumeExists && !resumeBase64) {
+        throw new Error("Resume attachment is missing or unreadable. Please re-upload your resume.");
+      }
+
+      const payload = {
+        toEmail: fields.email,
+        subject,
+        emailBody,
+        gmailUser: settings.GMAIL_USER || session?.user?.email || "",
+        gmailAppPassword: settings.GMAIL_APP_PASSWORD || "",
+        userName: settings.USER_NAME || "",
+        resumeBase64,
+        resumeFileName,
+      };
+
+      const res = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await res.json();
       if (res.ok) {
         addLog(`Email sent to ${fields.email}!`, "success");
