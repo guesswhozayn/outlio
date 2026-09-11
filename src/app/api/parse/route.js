@@ -10,9 +10,9 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { postText, image, mimeType, model, userModel } = await req.json();
+    const { postText, image, mimeType, model } = await req.json();
 
-    const selectedModel = model || userModel || DEFAULT_MODEL;
+    const selectedModel = model || DEFAULT_MODEL;
 
     const prompt = `
 Analyze the following LinkedIn post or job description. Extract the following information:

@@ -13,7 +13,7 @@ const getLocalKvPath = () => {
   try {
     fs.accessSync(process.cwd(), fs.constants.W_OK);
     return path.join(process.cwd(), 'local_kv.json');
-  } catch (e) {
+  } catch {
     return path.join('/tmp', 'local_kv.json');
   }
 };
@@ -28,7 +28,7 @@ async function getLocalSettings(email) {
     const data = fs.readFileSync(LOCAL_KV_PATH, 'utf8');
     const parsed = JSON.parse(data);
     return parsed[`settings:${email}`] || null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -40,7 +40,7 @@ async function setLocalSettings(email, settings) {
       const fileData = fs.readFileSync(LOCAL_KV_PATH, 'utf8');
       data = JSON.parse(fileData);
     }
-  } catch (error) {
+  } catch {
     // Ignore read errors, just overwrite
   }
   

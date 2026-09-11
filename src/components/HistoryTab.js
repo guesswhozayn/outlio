@@ -27,9 +27,7 @@ export default function HistoryTab({ history, setFields, setIsFollowUp, setActiv
                   recipientName: item.recipientName || prev.recipientName,
                   skills: item.skills || prev.skills || "",
                   keyRequirements: item.keyRequirements || prev.keyRequirements || [],
-                  comprehensiveSkills: item.comprehensiveSkills || prev.comprehensiveSkills || "",
-                  userPhone: item.userPhone || prev.userPhone || "",
-                  userLinkedin: item.userLinkedin || prev.userLinkedin || ""
+                  comprehensiveSkills: item.comprehensiveSkills || prev.comprehensiveSkills || ""
                 }));
                 setIsFollowUp(true);
                 setIsManuallyEdited(false);

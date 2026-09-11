@@ -11,12 +11,3 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-export async function POST() {
-  try {
-    const models = await fetchFreeModels();
-    return NextResponse.json({ models });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
