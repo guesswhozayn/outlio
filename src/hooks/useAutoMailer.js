@@ -38,8 +38,7 @@ export function useAutoMailer() {
   const [fields, setFields] = useState({
     email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [],
   });
-  const [userProfile, setUserProfile] = useState({ name: "", phone: "", linkedin: "", github: "", portfolio: "" });
-  
+
   const [manualSubject, setManualSubject] = useState("");
   const [manualEmailBody, setManualEmailBody] = useState("");
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
@@ -243,13 +242,6 @@ export function useAutoMailer() {
       }
 
       setSettings(prev => ({ ...prev, ...finalSettings }));
-      setUserProfile({ 
-        name: finalSettings.USER_NAME || "", 
-        phone: finalSettings.USER_PHONE || "", 
-        linkedin: finalSettings.USER_LINKEDIN || "",
-        github: finalSettings.USER_GITHUB || "",
-        portfolio: finalSettings.USER_PORTFOLIO || ""
-      });
       fetchAvailableModels();
       
       try {
@@ -298,9 +290,9 @@ export function useAutoMailer() {
     const pSkills = fields.skills || "";
     const cName = fields.company ? fields.company : "your company";
 
-    const uName = userProfile.name || "[Your Name]";
-    const uPhone = fields.userPhone || userProfile.phone || "";
-    const uLink = fields.userLinkedin || userProfile.linkedin || "";
+    const uName = settings.USER_NAME || "[Your Name]";
+    const uPhone = settings.USER_PHONE || "";
+    const uLink = settings.USER_LINKEDIN || "";
     
     let salutation = "Hi Hiring Team,";
     if (fields.recipientName && fields.recipientName.toLowerCase() !== "hiring team") {
@@ -310,8 +302,8 @@ export function useAutoMailer() {
     const contactParts = [];
     if (uPhone && uPhone !== "[Phone Number]") contactParts.push(uPhone);
     if (uLink && uLink !== "[LinkedIn Profile]") contactParts.push(uLink);
-    if (userProfile.github) contactParts.push(userProfile.github);
-    if (userProfile.portfolio) contactParts.push(userProfile.portfolio);
+    if (settings.USER_GITHUB) contactParts.push(settings.USER_GITHUB);
+    if (settings.USER_PORTFOLIO) contactParts.push(settings.USER_PORTFOLIO);
     const contactBlock = contactParts.length > 0 ? `\n${contactParts.join(" | ")}` : "";
 
     const reqs = Array.isArray(fields.keyRequirements) && fields.keyRequirements.length > 0
@@ -339,7 +331,7 @@ export function useAutoMailer() {
     }
 
     return { subject: sub, body };
-  }, [fields, userProfile, isFollowUp]);
+  }, [fields, settings, isFollowUp]);
 
   const subject = isManuallyEdited ? manualSubject : compiled.subject;
   const emailBody = isManuallyEdited ? manualEmailBody : compiled.body;
@@ -384,13 +376,6 @@ export function useAutoMailer() {
         throw new Error(errorData.error || "Failed to save settings");
       }
 
-      setUserProfile({ 
-        name: settings.USER_NAME, 
-        phone: settings.USER_PHONE, 
-        linkedin: settings.USER_LINKEDIN,
-        github: settings.USER_GITHUB,
-        portfolio: settings.USER_PORTFOLIO
-      });
       addLog("Settings saved successfully.", "success");
       setSettingsOpen(false);
     } catch (e) {
@@ -418,7 +403,7 @@ export function useAutoMailer() {
       setResumeFile(file);
       setResumeExists(true);
       addLog("Resume saved securely in browser.", "success");
-    } catch (error) {
+    } catch {
       addLog("Error saving resume.", "error");
     } finally {
       setIsUploading(false);
@@ -597,8 +582,8 @@ export function useAutoMailer() {
           skills: fields.skills || "",
           keyRequirements: fields.keyRequirements || [],
           comprehensiveSkills: fields.comprehensiveSkills || "",
-          userPhone: fields.userPhone || "",
-          userLinkedin: fields.userLinkedin || "",
+          userPhone: settings.USER_PHONE || "",
+          userLinkedin: settings.USER_LINKEDIN || "",
           type: isFollowUp ? "Follow Up" : "Standard Application"
         };
         const updatedHistory = [newEntry, ...history];
@@ -639,7 +624,6 @@ export function useAutoMailer() {
     postText, setPostText,
     isSharedFromLinkedIn, setIsSharedFromLinkedIn,
     fields, setFields,
-    userProfile, setUserProfile,
     subject, setSubject,
     emailBody, setEmailBody,
     isManuallyEdited, setIsManuallyEdited: handleSetIsManuallyEdited,
@@ -667,5 +651,3 @@ export function useAutoMailer() {
     handleSaveSettings,
   };
 }
-
-export const useOutlio = useAutoMailer;

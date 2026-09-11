@@ -10,13 +10,13 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { latexCode, jobDescription, model, userModel } = await req.json();
+    const { latexCode, jobDescription, model } = await req.json();
 
     if (!latexCode) {
       return NextResponse.json({ error: "No base LaTeX resume provided." }, { status: 400 });
     }
 
-    const selectedModel = model || userModel || DEFAULT_MODEL;
+    const selectedModel = model || DEFAULT_MODEL;
 
     const systemMessage = {
       role: "system",
