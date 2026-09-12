@@ -11,11 +11,38 @@ export default function SettingsDrawer({
   isSavingSettings,
   handleSaveSettings
 }) {
-  const modelOptions = availableModels.length > 0 ? availableModels : FALLBACK_FREE_MODELS;
+  // Merge fallback models and live available models without duplicates
+  const allModelsMap = new Map();
+
+  FALLBACK_FREE_MODELS.forEach((m) => {
+    allModelsMap.set(m.name, m);
+  });
+
+  if (Array.isArray(availableModels) && availableModels.length > 0) {
+    availableModels.forEach((m) => {
+      if (m && m.name) {
+        allModelsMap.set(m.name, m);
+      }
+    });
+  }
+
   const currentModel = settings.MODEL || "openrouter/free";
-  const isKnownModel = modelOptions.some(m => m.name === currentModel);
-  const [customSelected, setCustomSelected] = useState(false);
-  const isCustomMode = customSelected || (!isKnownModel && Boolean(currentModel));
+  if (currentModel && currentModel !== "custom" && currentModel !== "__custom__" && !allModelsMap.has(currentModel)) {
+    allModelsMap.set(currentModel, {
+      name: currentModel,
+      displayName: currentModel,
+      isVision: false,
+    });
+  }
+
+  const modelOptions = Array.from(allModelsMap.values());
+  modelOptions.sort((a, b) => {
+    if (a.name === "openrouter/free") return -1;
+    if (b.name === "openrouter/free") return 1;
+    return (a.displayName || a.name).localeCompare(b.displayName || b.name);
+  });
+
+  const [isCustomMode, setIsCustomMode] = useState(false);
 
   return (
     <>
@@ -45,15 +72,12 @@ export default function SettingsDrawer({
                 outline: "none",
                 cursor: "pointer"
               }}
-              value={isCustomMode ? "custom" : (isKnownModel ? currentModel : "custom")}
+              value={isCustomMode ? "__custom__" : (settings.MODEL || "openrouter/free")}
               onChange={(e) => {
-                if (e.target.value === "custom") {
-                  setCustomSelected(true);
-                  if (isKnownModel) {
-                    setSettings({ ...settings, MODEL: "" });
-                  }
+                if (e.target.value === "__custom__") {
+                  setIsCustomMode(true);
                 } else {
-                  setCustomSelected(false);
+                  setIsCustomMode(false);
                   setSettings({ ...settings, MODEL: e.target.value });
                 }
               }}
@@ -68,16 +92,17 @@ export default function SettingsDrawer({
                   </option>
                 );
               })}
-              <option value="custom">Custom Model...</option>
+              <option value="__custom__">Custom Model...</option>
             </select>
             
             {isCustomMode && (
               <input
                 type="text"
-                placeholder="Enter custom model identifier (e.g. anthropic/claude-3.5-sonnet)"
+                placeholder="e.g. anthropic/claude-3.5-sonnet"
                 value={settings.MODEL || ""}
                 onChange={(e) => setSettings({ ...settings, MODEL: e.target.value })}
                 style={{ marginTop: "0.5rem" }}
+                autoFocus
               />
             )}
             
@@ -105,7 +130,7 @@ export default function SettingsDrawer({
             <label>Phone Number</label>
             <input
               type="text"
-              placeholder="+1 (555) 019-2834"
+              placeholder="+1 (555) 000-0000"
               value={settings.USER_PHONE}
               onChange={(e) => setSettings({ ...settings, USER_PHONE: e.target.value })}
               required
@@ -116,7 +141,7 @@ export default function SettingsDrawer({
             <label>LinkedIn Profile URL</label>
             <input
               type="text"
-              placeholder="linkedin.com/in/username"
+              placeholder="linkedin.com/in/user"
               value={settings.USER_LINKEDIN}
               onChange={(e) => setSettings({ ...settings, USER_LINKEDIN: e.target.value })}
               required
@@ -127,7 +152,7 @@ export default function SettingsDrawer({
             <label>GitHub Profile URL</label>
             <input
               type="text"
-              placeholder="github.com/username"
+              placeholder="github.com/user"
               value={settings.USER_GITHUB}
               onChange={(e) => setSettings({ ...settings, USER_GITHUB: e.target.value })}
             />
@@ -137,7 +162,7 @@ export default function SettingsDrawer({
             <label>Portfolio Website</label>
             <input
               type="text"
-              placeholder="yourportfolio.com"
+              placeholder="portfolio.com"
               value={settings.USER_PORTFOLIO}
               onChange={(e) => setSettings({ ...settings, USER_PORTFOLIO: e.target.value })}
             />

@@ -12,6 +12,8 @@ import EmailPreviewTab from "@/components/EmailPreviewTab";
 import LandingPage from "@/components/LandingPage";
 import { useAutoMailer } from "@/hooks/useAutoMailer";
 
+import { ArrowLeftRight } from "lucide-react";
+
 function HomeContent() {
   const { theme, setTheme } = useTheme();
   const searchParams = useSearchParams();
@@ -30,6 +32,8 @@ function HomeContent() {
     return <LandingPage session={am.session} />;
   }
 
+  const isInputMode = am.viewMode === "input";
+
   return (
     <div className="app-container">
       <Navbar
@@ -40,26 +44,29 @@ function HomeContent() {
         session={am.session}
       />
 
-      <div className="dashboard-grid">
-        <JobInput
-          postText={am.postText}
-          setPostText={am.setPostText}
-          logs={am.logs}
-          handleImageUploadClick={am.handleImageUploadClick}
-          imageInputRef={am.imageInputRef}
-          handleImageChange={am.handleImageChange}
-          screenshotName={am.screenshotName}
-          setScreenshotData={am.setScreenshotData}
-          setScreenshotName={am.setScreenshotName}
-          isParsing={am.isParsing}
-          screenshotData={am.screenshotData}
-          handleParsePost={am.handleParsePost}
-          isSharedFromLinkedIn={am.isSharedFromLinkedIn}
-        />
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          <div className="card" style={{ height: "100%", justifyContent: "flex-start" }}>
-            <div className="card-header" style={{ borderBottom: "none", paddingBottom: 0 }}>
+      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+        {isInputMode ? (
+          <JobInput
+            postText={am.postText}
+            setPostText={am.setPostText}
+            logs={am.logs}
+            handleImageUploadClick={am.handleImageUploadClick}
+            imageInputRef={am.imageInputRef}
+            handleImageChange={am.handleImageChange}
+            screenshotName={am.screenshotName}
+            setScreenshotData={am.setScreenshotData}
+            setScreenshotName={am.setScreenshotName}
+            isParsing={am.isParsing}
+            screenshotData={am.screenshotData}
+            handleParsePost={am.handleParsePost}
+            isSharedFromLinkedIn={am.isSharedFromLinkedIn}
+            viewMode={am.viewMode}
+            setViewMode={am.setViewMode}
+            hasExtracted={Boolean(am.fields.email || am.fields.jobTitle)}
+          />
+        ) : (
+          <div className="card" style={{ minHeight: "550px", justifyContent: "flex-start" }}>
+            <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "0.75rem", marginBottom: "0.5rem" }}>
               <div className="tabs">
                 <button
                   className={`tab ${am.activeTab === "preview" ? "active" : ""}`}
@@ -80,6 +87,16 @@ function HomeContent() {
                   History
                 </button>
               </div>
+
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => am.setViewMode("input")}
+                title="Switch to Job Description"
+                aria-label="Switch to Job Description"
+              >
+                <ArrowLeftRight size={16} />
+              </button>
             </div>
 
             {am.activeTab === "details" && (
@@ -122,7 +139,7 @@ function HomeContent() {
               />
             )}
           </div>
-        </div>
+        )}
       </div>
 
       <SettingsDrawer
