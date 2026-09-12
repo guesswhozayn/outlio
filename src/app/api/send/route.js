@@ -32,8 +32,11 @@ export async function POST(req) {
     }
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (!token?.accessToken) {
+      return NextResponse.json({ error: "Google authentication missing. Please sign in with Google." }, { status: 400 });
+    }
 
-    let toEmail, subject, emailBody, gmailUser, gmailAppPassword, userName;
+    let toEmail, subject, emailBody, userName;
     let resumeAttachment = null;
 
     const contentType = req.headers.get("content-type") || "";
@@ -43,8 +46,6 @@ export async function POST(req) {
       toEmail = body.toEmail;
       subject = body.subject;
       emailBody = body.emailBody;
-      gmailUser = body.gmailUser || session.user.email;
-      gmailAppPassword = body.gmailAppPassword;
       userName = body.userName;
 
       if (body.resumeBase64) {
@@ -71,8 +72,6 @@ export async function POST(req) {
       toEmail = formData.get('toEmail');
       subject = formData.get('subject');
       emailBody = formData.get('emailBody');
-      gmailUser = formData.get('gmailUser') || session.user.email;
-      gmailAppPassword = formData.get('gmailAppPassword');
       userName = formData.get('userName');
       const resumeFile = formData.get('resume');
 
@@ -92,14 +91,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing required email fields." }, { status: 400 });
     }
 
-    const hasOAuth = Boolean(token?.accessToken);
-    const hasAppPassword = Boolean(gmailUser && gmailAppPassword);
-
-    if (!hasOAuth && !hasAppPassword) {
-      return NextResponse.json({ error: "Gmail authorization missing. Sign in with Google or provide an App Password." }, { status: 400 });
-    }
-
-    const senderEmail = session.user.email || gmailUser;
+    const senderEmail = session.user.email;
     const mailOptions = {
       from: userName ? `"${userName.replace(/["\r\n]/g, '')}" <${senderEmail}>` : senderEmail,
       to: toEmail,
@@ -111,39 +103,25 @@ export async function POST(req) {
       mailOptions.attachments = [resumeAttachment];
     }
 
-    // 1. Direct Gmail REST API sending for Google Logged-in users
-    if (hasOAuth) {
-      const rawMessage = await buildRawMessage(mailOptions);
-      const gmailRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token.accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ raw: rawMessage }),
-      });
-
-      if (!gmailRes.ok) {
-        const errData = await gmailRes.json().catch(() => ({}));
-        const errMsg = errData.error?.message || "Failed to send email via Gmail API";
-        throw new Error(errMsg);
-      }
-
-      const result = await gmailRes.json();
-      return NextResponse.json({ success: true, messageId: result.id });
-    }
-
-    // 2. SMTP fallback for Gmail App Password users
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: gmailUser,
-        pass: gmailAppPassword,
+    // Direct Gmail REST API sending using user Google session token
+    const rawMessage = await buildRawMessage(mailOptions);
+    const gmailRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.accessToken}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({ raw: rawMessage }),
     });
 
-    const info = await transporter.sendMail(mailOptions);
-    return NextResponse.json({ success: true, info: info.response });
+    if (!gmailRes.ok) {
+      const errData = await gmailRes.json().catch(() => ({}));
+      const errMsg = errData.error?.message || "Failed to send email via Gmail API";
+      throw new Error(errMsg);
+    }
+
+    const result = await gmailRes.json();
+    return NextResponse.json({ success: true, messageId: result.id });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
