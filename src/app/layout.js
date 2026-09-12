@@ -43,7 +43,8 @@ export const metadata = {
     title: "Outlio",
   },
   icons: {
-    apple: "/icons/apple-touch-icon.png",
+    icon: "/icon.svg",
+    apple: "/apple-icon",
   },
 };
 
