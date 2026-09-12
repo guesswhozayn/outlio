@@ -1,9 +1,9 @@
 "use client";
 
-import { Mail, Settings, Sun, Moon, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { Mail, Settings, Sun, Moon, LogOut, HelpCircle, LogIn } from "lucide-react";
+import { signOut, signIn } from "next-auth/react";
 
-export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, session }) {
+export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, setHelpOpen, session }) {
   const user = session?.user;
 
   return (
@@ -30,6 +30,15 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
 
         <button
           className="icon-btn"
+          onClick={() => setHelpOpen(true)}
+          title="How to Use Outlio"
+          aria-label="How to Use Outlio"
+        >
+          <HelpCircle size={18} />
+        </button>
+
+        <button
+          className="icon-btn"
           onClick={() => setSettingsOpen(true)}
           title="Configuration Settings"
           aria-label="Configuration Settings"
@@ -37,7 +46,7 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
           <Settings size={18} />
         </button>
 
-        {user && (
+        {user ? (
           <button
             className="icon-btn"
             onClick={() => signOut({ callbackUrl: "/" })}
@@ -48,6 +57,22 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
             }}
           >
             <LogOut size={18} />
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary"
+            onClick={() => signIn("google")}
+            style={{
+              padding: "0.35rem 0.75rem",
+              fontSize: "0.825rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              borderRadius: "var(--radius-sm)",
+            }}
+          >
+            <LogIn size={15} />
+            <span>Sign In</span>
           </button>
         )}
       </div>

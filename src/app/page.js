@@ -1,23 +1,21 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
+import { signIn } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import JobInput from "@/components/JobInput";
 import SettingsDrawer from "@/components/SettingsDrawer";
+import HelpDrawer from "@/components/HelpDrawer";
 import ExtractedFieldsTab from "@/components/ExtractedFieldsTab";
 import HistoryTab from "@/components/HistoryTab";
 import EmailPreviewTab from "@/components/EmailPreviewTab";
-import LandingPage from "@/components/LandingPage";
 import { useAutoMailer } from "@/hooks/useAutoMailer";
 
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, Mail } from "lucide-react";
 
 function HomeContent() {
   const { theme, setTheme } = useTheme();
-  const searchParams = useSearchParams();
-  const showLanding = searchParams.get("view") === "landing";
   const am = useAutoMailer();
 
   if (am.status === "loading") {
@@ -26,10 +24,6 @@ function HomeContent() {
         <div className="spinner spinner-lg"></div>
       </div>
     );
-  }
-
-  if (am.status === "unauthenticated" || showLanding) {
-    return <LandingPage session={am.session} />;
   }
 
   const isInputMode = am.viewMode === "input";
@@ -41,10 +35,44 @@ function HomeContent() {
         theme={theme}
         setTheme={setTheme}
         setSettingsOpen={am.setSettingsOpen}
+        setHelpOpen={am.setHelpOpen}
         session={am.session}
       />
 
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+        {am.status === "unauthenticated" && (
+          <div
+            style={{
+              padding: "0.75rem 1.25rem",
+              marginBottom: "1.25rem",
+              borderRadius: "var(--radius-md)",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--glass-border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "1rem",
+              boxShadow: "var(--shadow-sm)",
+            }}
+          >
+            <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
+              <strong>Preview Mode:</strong> Sign in with Google to extract jobs, tailor resumes, and send applications.
+            </span>
+            <button
+              className="btn btn-primary"
+              onClick={() => signIn("google")}
+              style={{
+                padding: "0.4rem 0.9rem",
+                fontSize: "0.85rem",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              Sign In with Google
+            </button>
+          </div>
+        )}
+
         {isInputMode ? (
           <JobInput
             postText={am.postText}
@@ -151,6 +179,11 @@ function HomeContent() {
         availableModels={am.availableModels}
         isSavingSettings={am.isSavingSettings}
         handleSaveSettings={am.handleSaveSettings}
+      />
+
+      <HelpDrawer
+        helpOpen={am.helpOpen}
+        setHelpOpen={am.setHelpOpen}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import localforage from "localforage";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 
 const emptySubscribe = () => () => { };
 
@@ -53,6 +53,7 @@ export function useAutoMailer() {
   const [history, setHistory] = useState([]);
   const [isFollowUp, setIsFollowUp] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const hasGmailConfig = Boolean(session?.user?.email);
   const [resumeExists, setResumeExists] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
@@ -101,6 +102,10 @@ export function useAutoMailer() {
   }, [availableModels.length, fetchAvailableModels]);
 
   const handleParsePost = useCallback(async (overrideText, overrideModel) => {
+    if (status === "unauthenticated") {
+      signIn("google");
+      return;
+    }
     let textToParse = typeof overrideText === "string" ? overrideText : postText;
     if (!textToParse.trim() && !screenshotData) return;
     setIsParsing(true);
@@ -170,7 +175,7 @@ export function useAutoMailer() {
     } finally {
       setIsParsing(false);
     }
-  }, [postText, screenshotData, addLog]);
+  }, [postText, screenshotData, addLog, status]);
 
   const checkSharedJob = useCallback(async (currentSettings) => {
     if (typeof window === "undefined") return;
@@ -351,6 +356,10 @@ export function useAutoMailer() {
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
+    if (status === "unauthenticated") {
+      signIn("google");
+      return;
+    }
     setIsSavingSettings(true);
     try {
       const email = session?.user?.email;
@@ -383,6 +392,10 @@ export function useAutoMailer() {
   };
 
   const handleUploadClick = () => {
+    if (status === "unauthenticated") {
+      signIn("google");
+      return;
+    }
     fileInputRef.current.click();
   };
 
@@ -407,7 +420,13 @@ export function useAutoMailer() {
     }
   };
 
-  const handleImageUploadClick = () => imageInputRef.current.click();
+  const handleImageUploadClick = () => {
+    if (status === "unauthenticated") {
+      signIn("google");
+      return;
+    }
+    imageInputRef.current.click();
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -423,6 +442,10 @@ export function useAutoMailer() {
   };
 
   const handleTailorResume = async () => {
+    if (status === "unauthenticated") {
+      signIn("google");
+      return;
+    }
     if (!settings.LATEX_RESUME) {
       addLog("Please provide a base LaTeX resume in settings first.", "error");
       return;
@@ -506,6 +529,10 @@ export function useAutoMailer() {
   };
 
   const handleSendEmail = async () => {
+    if (status === "unauthenticated") {
+      signIn("google");
+      return;
+    }
     if (!fields.email || !resumeExists || !hasGmailConfig) return;
     setIsSending(true);
     addLog(`Sending application to ${fields.email}...`, "info");
@@ -628,6 +655,7 @@ export function useAutoMailer() {
     history, setHistory,
     isFollowUp, setIsFollowUp,
     settingsOpen, setSettingsOpen: handleSetSettingsOpen,
+    helpOpen, setHelpOpen,
     hasGmailConfig,
     resumeExists, setResumeExists,
     resumeFile, setResumeFile,
