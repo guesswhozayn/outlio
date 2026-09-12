@@ -1,6 +1,6 @@
 # Outlio
 
-Outlio is an AI-powered job application outreach and resume tailoring assistant. Built on Next.js 16 (App Router), React 19, and the OpenRouter API, Outlio automates the entire pipeline of extracting job requirements from LinkedIn posts, URLs, or screenshots, dynamically tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching personalized cold outreach emails directly through Gmail.
+Outlio is a streamlined, AI-powered job application outreach and resume tailoring assistant built with Next.js 16 (App Router), React 19, and OpenRouter API. It automates the workflow of extracting job requirements from posts or screenshots, tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching concise cold outreach emails directly through your connected Gmail account.
 
 ---
 
@@ -9,20 +9,18 @@ Outlio is an AI-powered job application outreach and resume tailoring assistant.
 - [Overview](#overview)
 - [Architecture & Directory Layout](#architecture--directory-layout)
 - [Core Features](#core-features)
-  - [Multi-Source Job Ingestion](#multi-source-job-ingestion)
-  - [Intelligent Job Parsing & Multimodal Vision](#intelligent-job-parsing--multimodal-vision)
-  - [Dynamic Resume Tailoring](#dynamic-resume-tailoring)
-  - [In-Browser LaTeX PDF Compilation](#in-browser-latex-pdf-compilation)
-  - [Personalized Email Outreach & Follow-Ups](#personalized-email-outreach--follow-ups)
-  - [Secure Gmail Delivery Pipeline](#secure-gmail-delivery-pipeline)
-  - [Hybrid Persistence Architecture](#hybrid-persistence-architecture)
+  - [Multimodal Job Extraction](#multimodal-job-extraction)
+  - [Dynamic LaTeX Resume Tailoring & PDF Compilation](#dynamic-latex-resume-tailoring--pdf-compilation)
+  - [Ultra-Concise Outreach Emails & Follow-Ups](#ultra-concise-outreach-emails--follow-ups)
+  - [Direct Gmail Integration](#direct-gmail-integration)
+  - [Instant View Switching & User Preview Mode](#instant-view-switching--user-preview-mode)
+  - [Hybrid Browser & Cloud Persistence](#hybrid-browser--cloud-persistence)
 - [Technology Stack](#technology-stack)
-- [Progressive Web App (PWA) & Mobile Share Target](#progressive-web-app-pwa--mobile-share-target)
 - [Environment Configuration](#environment-configuration)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation & Setup](#installation--setup)
-  - [Google OAuth & Gmail Configuration](#google-oauth--gmail-configuration)
+  - [Google OAuth Setup](#google-oauth-setup)
 - [Available Scripts](#available-scripts)
 - [License](#license)
 
@@ -30,151 +28,106 @@ Outlio is an AI-powered job application outreach and resume tailoring assistant.
 
 ## Overview
 
-Applying to competitive job openings often requires tedious manual effort: reviewing lengthy job specifications, tailoring resume bullet points to match target keywords, compiling LaTeX source files, locating hiring manager emails, and drafting customized outreach messages. 
+Job searching often involves repetitive manual tasks: extracting recruiter emails, tweaking resume bullet points for ATS keywords, building LaTeX files, and writing cold emails.
 
-Outlio unifies these steps into a fast, cohesive, and repeatable workflow accessible across both desktop browsers and mobile devices.
+Outlio consolidates these steps into a unified workbench:
+1. **Paste or Upload**: Supply a job description or screenshot of a job post.
+2. **Extract & Preview**: Outlio's AI parses recruiter contact details and generates a concise outreach email.
+3. **Send via Gmail**: Click **Send** to dispatch your application directly through your connected Gmail account.
 
 ---
 
 ## Architecture & Directory Layout
 
-Outlio is constructed using the Next.js App Router and combines modular client workbench tabs with focused serverless API routes:
-
 ```
 outlio/
-├── package.json               # Package manifest, dependencies, and scripts
+├── package.json               # Package manifest and scripts
 ├── next.config.mjs            # Next.js configuration
-├── eslint.config.mjs          # ESLint configuration (Flat Config)
-├── public/                    # Static brand assets, manifest icons, and PWA assets
+├── eslint.config.mjs          # ESLint configuration
+├── public/                    # Static assets, PWA icons, and service worker
 └── src/
-    ├── app/                   # Next.js App Router structure
-    │   ├── layout.js          # Root layout with theme provider and navbar
+    ├── app/                   # Next.js App Router
+    │   ├── layout.js          # Root layout with providers
     │   ├── page.js            # Main application workbench
-    │   ├── globals.css        # Vanilla CSS design system (tokens, variables, utilities)
-    │   ├── manifest.js        # Dynamic Web App Manifest for PWA installation
-    │   ├── apple-icon.js      # Dynamic Apple touch icon generator
-    │   ├── landing/           # Public marketing landing page
-    │   ├── share-target/      # Web Share Target handler for incoming mobile shares
+    │   ├── globals.css        # Modern vanilla CSS design system & tokens
+    │   ├── manifest.js        # Web App Manifest
+    │   ├── apple-icon.js      # Dynamic Apple touch icon
     │   └── api/               # Serverless API routes
-    │       ├── auth/          # NextAuth authentication ([...nextauth])
-    │       ├── compile-latex/ # LaTeX-to-PDF compilation proxy
-    │       ├── fetch-linkedin/# Web scraper for LinkedIn job postings
-    │       ├── models/        # Available OpenRouter models endpoint
-    │       ├── parse/         # Multimodal LLM job description and screenshot parser
-    │       ├── send/          # Gmail dispatcher (OAuth2 & App Password via Nodemailer)
-    │       ├── settings/      # User settings persistence (Vercel KV / local KV fallback)
-    │       └── tailor-resume/ # Resume customization engine
-    ├── components/            # Reusable UI widgets and tabs
-    │   ├── EmailPreviewTab.js # Outreach message composer and previewer
-    │   ├── ExtractedFieldsTab.js # Structured job data viewer and editor
-    │   ├── HistoryTab.js      # Past job application history log
-    │   ├── JobInput.js        # URL submission, text paste, and screenshot upload
-    │   ├── LandingPage.js     # Marketing hero, feature grid, and testimonials
-    │   ├── Navbar.js          # Main navigation, auth state, and theme toggle
-    │   ├── Providers.js       # Next-themes and NextAuth session providers
-    │   ├── ServiceWorkerRegister.js # PWA service worker registration
-    │   └── SettingsDrawer.js  # API key, model selection, profile, and credentials editor
+    │       ├── auth/          # NextAuth OAuth handler ([...nextauth])
+    │       ├── compile-latex/ # LaTeX-to-PDF compilation service
+    │       ├── models/        # OpenRouter model discovery endpoint
+    │       ├── parse/         # Multimodal LLM job extractor
+    │       ├── send/          # Gmail REST API email dispatcher
+    │       ├── settings/      # User settings persistence endpoint
+    │       └── tailor-resume/ # AI resume customization engine
+    ├── components/            # Reusable UI components & drawers
+    │   ├── EmailPreviewTab.js # Email composer & preview workbench
+    │   ├── ExtractedFieldsTab.js # Extracted job attributes editor
+    │   ├── HelpDrawer.js      # Quick guide drawer
+    │   ├── HistoryTab.js      # Application history log & follow-up generator
+    │   ├── JobInput.js        # Job description text & screenshot intake
+    │   ├── Navbar.js          # Main navigation bar with theme & auth controls
+    │   ├── Providers.js       # NextAuth & theme providers
+    │   ├── ServiceWorkerRegister.js # PWA service worker initializer
+    │   └── SettingsDrawer.js  # Signature profile & LaTeX resume settings
     ├── hooks/                 # Custom React hooks
-    │   └── useAutoMailer.js   # Central application state, storage, and workflow hook
-    └── lib/                   # Shared utility modules
-        ├── auth.js            # NextAuth configuration and Google OAuth provider
-        └── openrouter.js      # OpenRouter API client with streaming and fallback
+    │   └── useAutoMailer.js   # Application workbench state & logic
+    └── lib/                   # Utility helpers
+        ├── auth.js            # NextAuth configuration with Gmail OAuth scopes
+        └── openrouter.js      # OpenRouter API client & fallback models
 ```
 
 ---
 
 ## Core Features
 
-### Multi-Source Job Ingestion
-- **Direct LinkedIn URL Fetching**: Automatically retrieves public job posting content from LinkedIn URLs via `/api/fetch-linkedin`.
-- **Raw Text Description Intake**: Paste job descriptions or hiring posts directly into the workbench.
-- **Job Screenshot Upload**: Upload PNG/JPEG images or screenshots of job listings for automated OCR and extraction.
-- **Mobile Share Target**: Native PWA integration allowing users to share job postings directly from the LinkedIn mobile app into Outlio using the native device share sheet.
+### Multimodal Job Extraction
+- **Text & Screenshot Intake**: Paste raw job post text or upload listing screenshots for AI extraction.
+- **Structured Parsing**: Automatically extracts recruiter email, position title, company name, hiring manager name, core tech stack, and key requirements.
 
-### Intelligent Job Parsing & Multimodal Vision
-- Powered by OpenRouter models (supports text and vision-capable multimodal LLMs).
-- Automatically extracts structured attributes into a clean JSON schema:
-  - Recruiter / HR Email address
-  - Company Name
-  - Job Title (Position)
-  - Recruiter / Hiring Team contact name
-  - Core technologies, languages, and technical stack
-  - Key requirements & core responsibilities
-  - Comprehensive related skills for resume targeting
+### Dynamic LaTeX Resume Tailoring & PDF Compilation
+- **AI Resume Customization**: Dynamically aligns qualifications and experience bullets in your LaTeX template with job requirements.
+- **In-Browser PDF Compilation**: Compiles LaTeX source code directly to a clean PDF resume attached to your email.
 
-### Dynamic Resume Tailoring
-- Maps candidate qualifications from a base LaTeX resume against the target job requirements.
-- Automatically adjusts candidate headlines / professional titles to match the role.
-- Reframes existing accomplishments and reorders experience bullet points to mirror target keywords without inventing fake credentials.
-- Strictly preserves the structural integrity, styling, and preamble of your existing LaTeX template.
+### Ultra-Concise Outreach Emails & Follow-Ups
+- **Concise Templates**: Automatically generates short, impactful outreach emails formatted as `Application for [Job Title] – [Your Name]`.
+- **Follow-Up Generator**: Re-engage recruiters from the **History** tab with polite follow-up emails and re-attached resumes.
 
-### In-Browser LaTeX PDF Compilation
-- Compiles LaTeX source code directly into downloadable PDF files via `/api/compile-latex`.
-- Sanitizes file naming to match candidate identity (e.g., `jane_doe_resume.pdf`).
-- Eliminates the need for a local TeX Live or MacTeX installation.
+### Direct Gmail Integration
+- **Google OAuth Session Dispatch**: Applications are sent directly through Gmail REST API using your authenticated Google account session.
 
-### Personalized Email Outreach & Follow-Ups
-- Composes tailored, high-converting outreach messages that avoid generic templates.
-- **Two Modes**:
-  - **Standard Application**: Expresses interest, highlights matching technical capabilities, and references specific responsibilities.
-  - **Follow-Up**: Generates polite check-in messages referencing earlier submissions with re-attached resumes.
-- In-browser editor allows instant manual tweaks before dispatching.
+### Instant View Switching & User Preview Mode
+- **View Toggle**: Switch between Job Description input and Email Preview with a single click (`<ArrowLeftRight />`).
+- **Visitor Preview Mode**: Unauthenticated visitors can explore the full UI; performing actions seamlessly prompts Google Sign-In.
 
-### Secure Gmail Delivery Pipeline
-- Sends emails directly through Gmail using **Nodemailer**.
-- **Two Authorization Options**:
-  1. **Google OAuth2**: One-click Google Sign-In with automatic token refresh requesting the `https://www.googleapis.com/auth/gmail.send` scope.
-  2. **Gmail App Password**: Enter your Gmail address and 16-character Google App Password in Settings.
-- Supports both `application/json` payloads (with base64 resume encoding) and `multipart/form-data` uploads.
-- Automatically attaches the tailored or base resume PDF.
-
-### Hybrid Persistence Architecture
-- **Client Storage (`localforage`)**: Stores base resume files (PDF/Blob), tailored resumes, and local application history in browser IndexedDB.
-- **Server Storage (`@vercel/kv` & Local JSON Fallback)**: User profile settings (API keys, selected model, personal contact links, LaTeX template) persist to Vercel KV in production, or gracefully fallback to a local JSON file (`local_kv.json`) in local development when KV credentials are not set.
+### Hybrid Browser & Cloud Persistence
+- **Client Storage (`localforage`)**: PDF resumes and history logs persist securely in browser IndexedDB.
+- **Settings Persistence**: User signature details and LaTeX templates persist across devices via settings storage.
 
 ---
 
 ## Technology Stack
 
 - **Framework**: [Next.js 16.2](https://nextjs.org/) (App Router, Turbopack)
-- **Core Library**: [React 19.2](https://react.dev/), React DOM 19.2
-- **Styling**: Modern Vanilla CSS design system with CSS custom properties and dark/light theme tokens
-- **Authentication**: [NextAuth 4.24](https://next-auth.js.org/) (Google OAuth Provider with Gmail Send scope)
-- **AI & Vision Orchestration**: [OpenRouter](https://openrouter.ai/) REST API
-- **Local & Cloud Storage**: [LocalForage](https://localforage.github.io/localForage/) (IndexedDB), [Vercel KV](https://vercel.com/docs/storage/vercel-kv) (`@vercel/kv`)
-- **Email Delivery**: [Nodemailer 7.0](https://nodemailer.com/) (Gmail OAuth2 & SMTP Transport)
-- **Theming**: [Next Themes](https://github.com/pacocoursey/next-themes)
+- **Core**: [React 19.2](https://react.dev/), JavaScript
+- **Styling**: Vanilla CSS Design System with dark/light themes & glassmorphism
+- **Auth & API**: [NextAuth 4.24](https://next-auth.js.org/) with Google OAuth & Gmail REST API
+- **AI Engine**: [OpenRouter API](https://openrouter.ai/) (Vision & Text LLMs)
 - **Icons**: [Lucide React](https://lucide.dev/)
-
----
-
-## Progressive Web App (PWA) & Mobile Share Target
-
-Outlio functions as an installable Progressive Web App:
-- **Web App Manifest**: Configured dynamically via `src/app/manifest.js` with theme colors, display modes, and high-resolution icons.
-- **Web Share Target API**: Declared in the manifest to intercept incoming links and text. When finding a job posting in the LinkedIn mobile app:
-  1. Tap **Share** -> **More** -> select **Outlio**.
-  2. The mobile browser opens `src/app/share-target/page.js`.
-  3. Outlio automatically intercepts the incoming URL, extracts job specifications, and populates your workbench.
-- **Service Worker**: Registered via `ServiceWorkerRegister.js` to enable shell caching.
 
 ---
 
 ## Environment Configuration
 
-Create a `.env.local` file in the root directory with the following variables:
+Create `.env.local` in the root directory:
 
-| Variable | Required | Description | Example / Default |
-| --- | --- | --- | --- |
-| `OPENROUTER_API_KEY` | Optional* | OpenRouter API Key for AI operations (can also be entered in Settings) | `sk-or-v1-...` |
-| `NEXTAUTH_SECRET` | **Yes** | Secret token for encrypting NextAuth session tokens | Run `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | **Yes** | Canonical base URL for NextAuth authentication callbacks | `http://localhost:3000` |
-| `GOOGLE_CLIENT_ID` | **Yes** | Google Cloud OAuth Client ID (for Google Sign-In & Gmail dispatch) | `...apps.googleusercontent.com` |
-| `GOOGLE_CLIENT_SECRET` | **Yes** | Google Cloud OAuth Client Secret | `GOCSPX-...` |
-| `KV_REST_API_URL` | Optional | Vercel KV REST API URL (falls back to local `local_kv.json` if omitted) | `https://...upstash.io` |
-| `KV_REST_API_TOKEN` | Optional | Vercel KV REST API Token | `AX...` |
-
-> *\* Note: If `OPENROUTER_API_KEY` is not provided in environment variables, users can supply their key via the in-app Settings Drawer.*
+```env
+NEXTAUTH_SECRET="your-nextauth-secret"
+NEXTAUTH_URL="http://localhost:3000"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+OPENROUTER_API_KEY="your-openrouter-api-key"
+```
 
 ---
 
@@ -183,8 +136,6 @@ Create a `.env.local` file in the root directory with the following variables:
 ### Prerequisites
 - **Node.js**: `20.x` or higher
 - **npm**: `9.x` or higher
-- An **OpenRouter API Key** (from [openrouter.ai](https://openrouter.ai/))
-- A **Google Cloud Project** with OAuth credentials
 
 ### Installation & Setup
 
@@ -199,35 +150,26 @@ Create a `.env.local` file in the root directory with the following variables:
    npm install
    ```
 
-3. **Configure environment variables**:
-   ```bash
-   cp .env.example .env.local  # or create .env.local manually
-   ```
+3. **Configure `.env.local`**:
+   Populate your `.env.local` file with the environment variables listed above.
 
-4. **Start the local development server**:
+4. **Start local development server**:
    ```bash
    npm run dev
    ```
 
-5. **Open the application**:
-   Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+5. Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-### Google OAuth & Gmail Configuration
-
-To enable one-click Google Sign-In and automated email dispatch:
+## Google OAuth Setup
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2. Create a project and enable the **Gmail API**.
-3. Under **APIs & Services > Credentials**, configure an **OAuth 2.0 Client ID**:
-   - **Application type**: Web application
-   - **Authorized JavaScript origins**: `http://localhost:3000` (and your production domain)
-   - **Authorized redirect URIs**: `http://localhost:3000/api/auth/callback/google` (and your production callback)
-4. Under **OAuth consent screen**, add the `https://www.googleapis.com/auth/gmail.send` scope.
-5. Copy your Client ID and Client Secret into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env.local`.
-
-*(Alternatively, users who prefer not to use OAuth can enter a Google App Password directly in the in-app Settings drawer).*
+3. Create an **OAuth 2.0 Client ID** (Web application).
+   - **Authorized redirect URIs**: `http://localhost:3000/api/auth/callback/google`
+4. Add the `https://www.googleapis.com/auth/gmail.send` scope in the OAuth consent screen.
+5. Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to `.env.local`.
 
 ---
 
@@ -235,10 +177,10 @@ To enable one-click Google Sign-In and automated email dispatch:
 
 | Script | Command | Purpose |
 | --- | --- | --- |
-| `dev` | `npm run dev` | Runs the Next.js development server with Turbopack and IPv4 DNS order |
-| `build` | `npm run build` | Compiles an optimized Next.js production build |
-| `start` | `npm run start` | Starts the Next.js production server |
-| `lint` | `npm run lint` | Runs ESLint across all files in `src/` |
+| `dev` | `npm run dev` | Runs the Next.js development server with Turbopack |
+| `build` | `npm run build` | Compiles an optimized production build |
+| `start` | `npm run start` | Starts the production server |
+| `lint` | `npm run lint` | Runs ESLint across all source files |
 
 ---
 
