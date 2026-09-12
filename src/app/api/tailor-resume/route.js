@@ -54,7 +54,6 @@ ${latexCode}
       ],
     });
 
-    // Strip markdown formatting or conversational commentary
     let cleanLatex = responseText.trim();
     const fenceMatch = cleanLatex.match(/```(?:latex)?\s*([\s\S]*?)```/i);
     if (fenceMatch) {

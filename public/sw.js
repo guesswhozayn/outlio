@@ -1,4 +1,3 @@
-// Outlio PWA Service Worker
 const CACHE_NAME = 'outlio-v1';
 
 self.addEventListener('install', (event) => {
@@ -16,12 +15,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests for static assets or navigation
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
-  // Skip API routes and auth requests from service worker caching
   if (url.pathname.startsWith('/api')) {
     return;
   }

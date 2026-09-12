@@ -11,7 +11,6 @@ export default function SettingsDrawer({
   isSavingSettings,
   handleSaveSettings
 }) {
-  // Merge fallback models and live available models without duplicates
   const allModelsMap = new Map();
 
   FALLBACK_FREE_MODELS.forEach((m) => {

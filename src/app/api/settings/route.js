@@ -41,7 +41,6 @@ async function setLocalSettings(email, settings) {
       data = JSON.parse(fileData);
     }
   } catch {
-    // Ignore read errors, just overwrite
   }
   
   data[`settings:${email}`] = settings;

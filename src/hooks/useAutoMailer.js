@@ -49,7 +49,7 @@ export function useAutoMailer() {
   });
 
   const [activeTab, setActiveTab] = useState("preview");
-  const [viewMode, setViewMode] = useState("input"); // "input" = Job Description box, "workspace" = Email & Details box
+  const [viewMode, setViewMode] = useState("input");
   const [history, setHistory] = useState([]);
   const [isFollowUp, setIsFollowUp] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -492,7 +492,6 @@ export function useAutoMailer() {
         }
       }
 
-      // Fallback: if resumeFile state was lost or corrupted, attempt recovery from localforage
       if (!resumeBase64 && resumeExists) {
         const stored = (await localforage.getItem("outlio_tailored_resume")) ||
           (await localforage.getItem("outlio_base_resume")) ||
@@ -550,7 +549,6 @@ export function useAutoMailer() {
         setHistory(updatedHistory);
         localforage.setItem("outlio_history", updatedHistory).catch(console.warn);
 
-        // Cleanup after successful send
         localforage.removeItem("outlio_tailored_resume").catch(console.warn);
         localforage.removeItem("automailer_tailored_resume").catch(console.warn);
         const baseResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));

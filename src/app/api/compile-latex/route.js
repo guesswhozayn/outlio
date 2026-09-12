@@ -17,7 +17,6 @@ export async function POST(req) {
 
     const formData = new FormData();
     formData.append('compiler', 'pdflatex');
-    // Using a Blob to simulate a file upload in FormData
     const blob = new Blob([latexCode], { type: 'application/x-tex' });
     formData.append('file', blob, 'resume.tex');
 

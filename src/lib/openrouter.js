@@ -60,7 +60,6 @@ export async function fetchFreeModels() {
       return FALLBACK_FREE_MODELS;
     }
 
-    // Ensure openrouter/free is at the very top
     freeModels.sort((a, b) => {
       if (a.name === "openrouter/free") return -1;
       if (b.name === "openrouter/free") return 1;
@@ -137,7 +136,6 @@ export function extractJson(text) {
 
   let clean = text.trim();
 
-  // Strip markdown code fences if present
   if (clean.startsWith("```json")) {
     clean = clean.substring(7);
   } else if (clean.startsWith("```")) {
@@ -153,7 +151,6 @@ export function extractJson(text) {
   try {
     return JSON.parse(clean);
   } catch (initialErr) {
-    // If there is extra text around JSON, find first { and last }
     const firstBrace = clean.indexOf("{");
     const lastBrace = clean.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
