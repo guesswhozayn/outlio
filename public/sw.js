@@ -21,8 +21,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Skip API routes, auth, and external requests from service worker caching
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/share-target')) {
+  // Skip API routes and auth requests from service worker caching
+  if (url.pathname.startsWith('/api')) {
     return;
   }
 

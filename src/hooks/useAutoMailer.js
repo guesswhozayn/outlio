@@ -74,7 +74,6 @@ export function useAutoMailer() {
   const imageInputRef = useRef(null);
   const [screenshotData, setScreenshotData] = useState(null);
   const [screenshotName, setScreenshotName] = useState("");
-  const [isSharedFromLinkedIn, setIsSharedFromLinkedIn] = useState(false);
 
   const addLog = useCallback((message, type = "info") => {
     const timestamp = new Date().toLocaleTimeString();
@@ -109,29 +108,6 @@ export function useAutoMailer() {
     let textToParse = typeof overrideText === "string" ? overrideText : postText;
     if (!textToParse.trim() && !screenshotData) return;
     setIsParsing(true);
-
-    // If input contains a LinkedIn URL and is relatively short, auto-resolve full details first
-    if (/https?:\/\/(?:[a-zA-Z0-9-]+\.)?linkedin\.com\/[^\s]+/i.test(textToParse) && textToParse.length < 600) {
-      addLog("Resolving LinkedIn link details...", "info");
-      try {
-        const fetchRes = await fetch("/api/fetch-linkedin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: textToParse }),
-        });
-        if (fetchRes.ok) {
-          const fetchData = await fetchRes.json();
-          if (fetchData.text && fetchData.text.length > textToParse.length) {
-            textToParse = fetchData.text;
-            setPostText(textToParse);
-            setIsSharedFromLinkedIn(true);
-            addLog("Loaded full post details from LinkedIn!", "success");
-          }
-        }
-      } catch (err) {
-        console.warn("Auto-resolve error:", err);
-      }
-    }
 
     addLog("Sending to AI extractor...", "info");
 
@@ -177,38 +153,7 @@ export function useAutoMailer() {
     }
   }, [postText, screenshotData, addLog, status]);
 
-  const checkSharedJob = useCallback(async (currentSettings) => {
-    if (typeof window === "undefined") return;
-    try {
-      const sharedRaw = localStorage.getItem("outlio_shared_job");
-      if (!sharedRaw) return;
 
-      const sharedObj = JSON.parse(sharedRaw);
-      if (sharedObj && sharedObj.text) {
-        setPostText(sharedObj.text);
-        setIsSharedFromLinkedIn(true);
-        localStorage.removeItem("outlio_shared_job");
-
-        const shouldAutoParse = sessionStorage.getItem("outlio_trigger_auto_parse");
-        sessionStorage.removeItem("outlio_trigger_auto_parse");
-
-        if (window.location.search.includes("shared=true")) {
-          const cleanUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
-        }
-
-        addLog("Loaded shared LinkedIn post into workspace.", "success");
-
-        if (shouldAutoParse === "true") {
-          addLog("Automatically extracting details from shared post...", "info");
-          const activeModel = currentSettings?.MODEL || settingsRef.current.MODEL || "openrouter/free";
-          handleParsePost(sharedObj.text, activeModel);
-        }
-      }
-    } catch (err) {
-      console.warn("Error reading shared job from storage:", err);
-    }
-  }, [handleParsePost, addLog]);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -276,11 +221,10 @@ export function useAutoMailer() {
       } catch (err) {
         console.warn("Browser storage access denied for resume:", err);
       }
-      checkSharedJob(finalSettings);
     } catch (e) {
       console.error(e);
     }
-  }, [session, fetchAvailableModels, checkSharedJob, addLog]);
+  }, [session, fetchAvailableModels, addLog]);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -289,12 +233,11 @@ export function useAutoMailer() {
         hasInitializedUserRef.current = userKey;
         loadSettings();
         addLog("Dashboard initialized. Ready to process jobs.", "info");
-        checkSharedJob();
       }
     } else if (status === "unauthenticated") {
       hasInitializedUserRef.current = null;
     }
-  }, [status, session?.user?.email, loadSettings, checkSharedJob, addLog]);
+  }, [status, session?.user?.email, loadSettings, addLog]);
 
   const compiled = useMemo(() => {
     const pTitle = fields.jobTitle || "[Position Title]";
@@ -625,7 +568,6 @@ export function useAutoMailer() {
         }
 
         setPostText("");
-        setIsSharedFromLinkedIn(false);
         setScreenshotData(null);
         setScreenshotName("");
         setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [] });
@@ -644,7 +586,6 @@ export function useAutoMailer() {
     session, status,
     mounted,
     postText, setPostText,
-    isSharedFromLinkedIn, setIsSharedFromLinkedIn,
     fields, setFields,
     subject, setSubject,
     emailBody, setEmailBody,

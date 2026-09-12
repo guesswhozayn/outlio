@@ -23,14 +23,5 @@ export default function manifest() {
         purpose: "maskable any",
       },
     ],
-    share_target: {
-      action: "/share-target",
-      method: "GET",
-      params: {
-        title: "title",
-        text: "text",
-        url: "url",
-      },
-    },
   };
 }
