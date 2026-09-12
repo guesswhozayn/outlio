@@ -13,22 +13,23 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#0a0a0a',
+          backgroundColor: '#000000',
+          borderRadius: '36px',
         }}
       >
         <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="100"
-          height="100"
-          viewBox="0 0 24 24"
+          width="130"
+          height="130"
+          viewBox="0 0 56 56"
           fill="none"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path>
-          <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+          {/* Primary Fold (Top Wing) */}
+          <path d="M14 28 L40 16 L26 32 Z" fill="#FFFFFF" />
+          {/* Secondary Dual Fold (Bottom Wing) */}
+          <path d="M40 16 L30 42 L26 32 Z" fill="#FFFFFF" fillOpacity="0.75" />
+          {/* Origami Shadow Crease */}
+          <path d="M14 28 L26 32 L21 35 Z" fill="#000000" fillOpacity="0.22" />
         </svg>
       </div>
     ),

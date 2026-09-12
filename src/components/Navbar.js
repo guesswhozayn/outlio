@@ -1,7 +1,8 @@
 "use client";
 
-import { Mail, Settings, Sun, Moon, LogOut, HelpCircle, LogIn } from "lucide-react";
+import { Settings, Sun, Moon, LogOut, HelpCircle, LogIn } from "lucide-react";
 import { signOut, signIn } from "next-auth/react";
+import OutlioLogo from "./OutlioLogo";
 
 export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, setHelpOpen, session }) {
   const user = session?.user;
@@ -9,9 +10,7 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, setH
   return (
     <header className="floating-nav">
       <div className="logo-section">
-        <div className="nav-logo">
-          <Mail size={18} className="nav-logo-icon" />
-        </div>
+        <OutlioLogo size={32} bg="#000000" shape="circle" />
         <div>
           <h1 className="nav-title">Outlio</h1>
         </div>
