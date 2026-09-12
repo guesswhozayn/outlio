@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore
 import localforage from "localforage";
 import { useSession } from "next-auth/react";
 
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => { };
 
 const fileToBase64 = async (fileOrBlob) => {
   if (!fileOrBlob) return null;
@@ -125,7 +125,7 @@ export function useAutoMailer() {
     }
 
     addLog("Sending to AI extractor...", "info");
-    
+
     const base64Image = screenshotData ? screenshotData.split(",")[1] : null;
     const mimeType = screenshotData ? screenshotData.split(";")[0].split(":")[1] : null;
 
@@ -214,7 +214,7 @@ export function useAutoMailer() {
 
       const res = await fetch("/api/settings", { cache: "no-store" });
       const parsed = await res.json();
-      
+
       let finalSettings = { ...localSettings };
 
       if (parsed && Object.keys(parsed).length > 0 && !parsed.error) {
@@ -243,7 +243,7 @@ export function useAutoMailer() {
 
       setSettings(prev => ({ ...prev, ...finalSettings }));
       fetchAvailableModels();
-      
+
       try {
         const storedHistory = (await localforage.getItem("outlio_history")) || (await localforage.getItem("automailer_history"));
         if (storedHistory) setHistory(storedHistory);
@@ -254,7 +254,7 @@ export function useAutoMailer() {
       try {
         const tailoredResume = await localforage.getItem("outlio_tailored_resume");
         const baseResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));
-        
+
         const isValidResume = (item) => Boolean(item && (item instanceof Blob || item instanceof ArrayBuffer || (typeof item === 'object' && (item.size > 0 || item.byteLength > 0))));
 
         if (isValidResume(tailoredResume)) {
@@ -269,7 +269,6 @@ export function useAutoMailer() {
       } catch (err) {
         console.warn("Browser storage access denied for resume:", err);
       }
-
       checkSharedJob(finalSettings);
     } catch (e) {
       console.error(e);
@@ -293,7 +292,7 @@ export function useAutoMailer() {
     const uName = settings.USER_NAME || "[Your Name]";
     const uPhone = settings.USER_PHONE || "";
     const uLink = settings.USER_LINKEDIN || "";
-    
+
     let salutation = "Hi Hiring Team,";
     if (fields.recipientName && fields.recipientName.toLowerCase() !== "hiring team") {
       salutation = `Hi ${fields.recipientName},`;
@@ -370,7 +369,7 @@ export function useAutoMailer() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings)
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to save settings");
@@ -411,13 +410,13 @@ export function useAutoMailer() {
   };
 
   const handleImageUploadClick = () => imageInputRef.current.click();
-  
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     e.target.value = "";
     setScreenshotName(file.name);
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setScreenshotData(reader.result);
@@ -430,13 +429,13 @@ export function useAutoMailer() {
       addLog("Please provide a base LaTeX resume in settings first.", "error");
       return;
     }
-    
+
     setIsTailoring(true);
     addLog("Tailoring resume with AI...", "info");
-    
+
     try {
       let tailoredLatexTemplate = settings.LATEX_RESUME;
-      
+
       const replaceLatexValue = (template, placeholder, rawValue) => {
         if (!rawValue) return template.replaceAll(placeholder, "");
         return template.replaceAll(placeholder, (match, offset, fullStr) => {
@@ -462,7 +461,7 @@ export function useAutoMailer() {
         ["{{USER_GITHUB}}", settings.USER_GITHUB || ""],
         ["{{USER_PORTFOLIO}}", settings.USER_PORTFOLIO || ""]
       ];
-      
+
       replacements.forEach(([key, value]) => {
         tailoredLatexTemplate = replaceLatexValue(tailoredLatexTemplate, key, value);
       });
@@ -470,7 +469,7 @@ export function useAutoMailer() {
       const tailorRes = await fetch("/api/tailor-resume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           latexCode: tailoredLatexTemplate,
           jobDescription: postText || fields.comprehensiveSkills || fields.skills || "Software Engineering Role",
           model: settings.MODEL || "openrouter/free"
@@ -478,29 +477,29 @@ export function useAutoMailer() {
       });
       const tailorData = await tailorRes.json();
       if (!tailorRes.ok) throw new Error(tailorData.error || "Failed to tailor resume");
-      
+
       addLog("Compiling LaTeX to PDF...", "info");
-      
+
       const compileRes = await fetch("/api/compile-latex", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latexCode: tailorData.latex, userName: settings.USER_NAME })
       });
-      
+
       if (!compileRes.ok) {
         const errorData = await compileRes.json();
         throw new Error(errorData.error || "Failed to compile PDF");
       }
-      
+
       const pdfBlob = await compileRes.blob();
       const defaultFileName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
       pdfBlob.name = defaultFileName;
-      
+
       await localforage.setItem("outlio_tailored_resume", pdfBlob);
       setResumeFile(pdfBlob);
       setResumeExists(true);
       addLog("Tailored resume generated and attached successfully!", "success");
-      
+
     } catch (error) {
       addLog(`Error tailoring resume: ${error.message}`, "error");
     } finally {

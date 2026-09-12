@@ -764,12 +764,14 @@ export default function LandingPage({ session }) {
                 <a href="#phone" className="footer-link">On Your Phone</a>
                 <a href="#comparison" className="footer-link">Comparison</a>
                 <a href="#faq" className="footer-link">FAQ</a>
+                <Link href="/privacy" className="footer-link">Privacy</Link>
+                <Link href="/terms" className="footer-link">Terms</Link>
               </div>
             </div>
 
             <div className="footer-bottom">
               <div>
-                &copy; {new Date().getFullYear()} Outlio. The effortless way to apply for jobs.
+                &copy; {new Date().getFullYear()} Outlio. The effortless way to apply for jobs. &bull; <Link href="/privacy" style={{ color: "inherit", textDecoration: "underline" }}>Privacy Policy</Link> &bull; <Link href="/terms" style={{ color: "inherit", textDecoration: "underline" }}>Terms of Service</Link>
               </div>
 
               <div className="status-badge">
