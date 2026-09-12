@@ -21,7 +21,7 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: "Outlio — AI Job Application Outreach & Resume Tailoring",
+  title: "Outlio - AI Job Outreach Assistant",
   description: "Turn LinkedIn job posts into tailored applications in seconds. AI deep extraction, recruiter-proven emails under 65 words, automated LaTeX resume tailoring, and 1-click Gmail sending.",
   keywords: ["AI job applications", "LinkedIn post extractor", "resume tailoring", "cold email outreach", "Gmail 1-click apply", "job hunter tool"],
   authors: [{ name: "Outlio" }],
