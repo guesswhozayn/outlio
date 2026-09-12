@@ -45,15 +45,15 @@ export function useAutoMailer() {
 
   const [settings, setSettings] = useState({
     MODEL: "openrouter/free",
-    GMAIL_USER: "", GMAIL_APP_PASSWORD: "",
     USER_NAME: "", USER_PHONE: "", USER_LINKEDIN: "", USER_GITHUB: "", USER_PORTFOLIO: "", LATEX_RESUME: "",
   });
 
   const [activeTab, setActiveTab] = useState("preview");
+  const [viewMode, setViewMode] = useState("input"); // "input" = Job Description box, "workspace" = Email & Details box
   const [history, setHistory] = useState([]);
   const [isFollowUp, setIsFollowUp] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const hasGmailConfig = Boolean(session?.user?.email || (settings.GMAIL_USER && settings.GMAIL_APP_PASSWORD));
+  const hasGmailConfig = Boolean(session?.user?.email);
   const [resumeExists, setResumeExists] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -64,6 +64,10 @@ export function useAutoMailer() {
   const [availableModels, setAvailableModels] = useState([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [logs, setLogs] = useState([]);
+
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const hasInitializedUserRef = useRef(null);
 
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -137,7 +141,7 @@ export function useAutoMailer() {
           postText: textToParse,
           image: base64Image,
           mimeType: mimeType,
-          model: overrideModel || settings.MODEL || "openrouter/free"
+          model: overrideModel || settingsRef.current.MODEL || "openrouter/free"
         }),
       });
 
@@ -158,6 +162,7 @@ export function useAutoMailer() {
       setIsManuallyEdited(false);
       setIsFollowUp(false);
       setActiveTab("preview");
+      setViewMode("workspace");
       addLog("Job details extracted successfully!", "success");
 
     } catch (error) {
@@ -165,7 +170,7 @@ export function useAutoMailer() {
     } finally {
       setIsParsing(false);
     }
-  }, [postText, screenshotData, settings.MODEL, addLog]);
+  }, [postText, screenshotData, addLog]);
 
   const checkSharedJob = useCallback(async (currentSettings) => {
     if (typeof window === "undefined") return;
@@ -191,14 +196,14 @@ export function useAutoMailer() {
 
         if (shouldAutoParse === "true") {
           addLog("Automatically extracting details from shared post...", "info");
-          const activeModel = currentSettings?.MODEL || settings.MODEL || "openrouter/free";
+          const activeModel = currentSettings?.MODEL || settingsRef.current.MODEL || "openrouter/free";
           handleParsePost(sharedObj.text, activeModel);
         }
       }
     } catch (err) {
       console.warn("Error reading shared job from storage:", err);
     }
-  }, [handleParsePost, settings.MODEL, addLog]);
+  }, [handleParsePost, addLog]);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -234,9 +239,6 @@ export function useAutoMailer() {
 
       const savedModel = finalSettings.MODEL || (finalSettings.GEMINI_MODEL && !finalSettings.GEMINI_MODEL.includes("gemini") ? finalSettings.GEMINI_MODEL : "openrouter/free");
       finalSettings.MODEL = savedModel;
-      if (!finalSettings.GMAIL_USER && email) {
-        finalSettings.GMAIL_USER = email;
-      }
       if (!finalSettings.USER_NAME && session?.user?.name) {
         finalSettings.USER_NAME = session.user.name;
       }
@@ -277,12 +279,17 @@ export function useAutoMailer() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadSettings();
-      addLog("Dashboard initialized. Ready to process jobs.", "info");
-      checkSharedJob();
+      const userKey = session?.user?.email || "authenticated_user";
+      if (hasInitializedUserRef.current !== userKey) {
+        hasInitializedUserRef.current = userKey;
+        loadSettings();
+        addLog("Dashboard initialized. Ready to process jobs.", "info");
+        checkSharedJob();
+      }
+    } else if (status === "unauthenticated") {
+      hasInitializedUserRef.current = null;
     }
-  }, [status, loadSettings, checkSharedJob, addLog]);
+  }, [status, session?.user?.email, loadSettings, checkSharedJob, addLog]);
 
   const compiled = useMemo(() => {
     const pTitle = fields.jobTitle || "[Position Title]";
@@ -313,20 +320,11 @@ export function useAutoMailer() {
     let sub = "";
 
     if (isFollowUp) {
-      const followUpSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "this space";
-      body = `${salutation}\n\nQuick follow-up on my application for the ${pTitle} role at ${cName}. I remain genuinely enthusiastic about what your team is building and eager to contribute my background in ${followUpSkills}.\n\nI've re-attached my resume for convenience. Would you be open to a brief 10-minute intro chat this week?\n\nBest,\n\n${uName}${contactBlock}`;
+      body = `${salutation}\n\nFollowing up on my application for the ${pTitle} role at ${cName}.\n\nMy resume is re-attached for your convenience. Please let me know if you'd be open to a brief conversation.\n\nBest,\n\n${uName}${contactBlock}`;
       sub = `Following up: ${pTitle} – ${uName}`;
     } else {
-      const standardSkills = pSkills && pSkills !== "[your field/technology/domain]" ? pSkills : "modern tech stacks";
-      let reqSection = "";
-      if (reqs.length > 0) {
-        reqSection = `\n\nWhere I can hit the ground running:\n` + reqs.map(r => `• ${r.replace(/^[•\-\*]\s*/, '')}`).join("\n");
-      } else if (fields.comprehensiveSkills) {
-        reqSection = `\n\nCore toolkit: ${fields.comprehensiveSkills}.`;
-      }
-
-      body = `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and wanted to put forward my application. With hands-on expertise in ${standardSkills}, I specialize in turning complex requirements into clean, scalable software.${reqSection}\n\nResume attached. Do you have 10 minutes this week for a brief conversation to see if we're a great mutual fit?\n\nBest,\n\n${uName}${contactBlock}`;
-      sub = `Application: ${pTitle} – ${uName}`;
+      body = `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and would love to apply.\n\nMy resume is attached for your review. Please let me know if you'd be open to a quick chat.\n\nBest,\n\n${uName}${contactBlock}`;
+      sub = `Application for ${pTitle} – ${uName}`;
     }
 
     return { subject: sub, body };
@@ -456,7 +454,7 @@ export function useAutoMailer() {
       const replacements = [
         ["{{USER_NAME}}", settings.USER_NAME || ""],
         ["{{USER_PHONE}}", settings.USER_PHONE || ""],
-        ["{{USER_EMAIL}}", settings.GMAIL_USER || session?.user?.email || ""],
+        ["{{USER_EMAIL}}", session?.user?.email || ""],
         ["{{USER_LINKEDIN}}", settings.USER_LINKEDIN || ""],
         ["{{USER_GITHUB}}", settings.USER_GITHUB || ""],
         ["{{USER_PORTFOLIO}}", settings.USER_PORTFOLIO || ""]
@@ -556,8 +554,6 @@ export function useAutoMailer() {
         toEmail: fields.email,
         subject,
         emailBody,
-        gmailUser: settings.GMAIL_USER || session?.user?.email || "",
-        gmailAppPassword: settings.GMAIL_APP_PASSWORD || "",
         userName: settings.USER_NAME || "",
         resumeBase64,
         resumeFileName,
@@ -628,6 +624,7 @@ export function useAutoMailer() {
     isManuallyEdited, setIsManuallyEdited: handleSetIsManuallyEdited,
     settings, setSettings,
     activeTab, setActiveTab,
+    viewMode, setViewMode,
     history, setHistory,
     isFollowUp, setIsFollowUp,
     settingsOpen, setSettingsOpen: handleSetSettingsOpen,

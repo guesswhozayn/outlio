@@ -34,7 +34,7 @@ export default function EmailPreviewTab({
         <label>To</label>
         <input
           type="email"
-          placeholder="hr-email@company.com"
+          placeholder="recruiter@company.com"
           value={fields.email}
           onChange={(e) => setFields({ ...fields, email: e.target.value })}
         />
@@ -44,7 +44,7 @@ export default function EmailPreviewTab({
         <label>Subject</label>
         <input
           type="text"
-          placeholder="Email Subject Line"
+          placeholder="Email subject"
           value={subject}
           onChange={(e) => { setSubject(e.target.value); setIsManuallyEdited(true); }}
         />

@@ -5,7 +5,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         <label>HR Recipient Email</label>
         <input
           type="email"
-          placeholder="hr-email@company.com"
+          placeholder="recruiter@company.com"
           value={fields.email}
           onChange={(e) => setFields({ ...fields, email: e.target.value })}
         />
@@ -14,7 +14,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         <label>Job Title (Position)</label>
         <input
           type="text"
-          placeholder="Software Engineer"
+          placeholder="Job title"
           value={fields.jobTitle}
           onChange={(e) => setFields({ ...fields, jobTitle: e.target.value })}
         />
@@ -23,7 +23,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         <label>Company Name</label>
         <input
           type="text"
-          placeholder="Acme Corp"
+          placeholder="Company name"
           value={fields.company}
           onChange={(e) => setFields({ ...fields, company: e.target.value })}
         />
@@ -32,7 +32,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         <label>Hiring Manager / Team</label>
         <input
           type="text"
-          placeholder="Hiring Team / John Doe"
+          placeholder="Hiring Manager / Team"
           value={fields.recipientName}
           onChange={(e) => setFields({ ...fields, recipientName: e.target.value })}
         />
@@ -49,7 +49,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
       <div className="form-group">
         <label>Key Requirements / Responsibilities (One per line)</label>
         <textarea
-          placeholder="Building RESTful APIs with Node.js&#10;Designing responsive React UI components..."
+          placeholder="Key requirements (one per line)..."
           value={
             Array.isArray(fields.keyRequirements)
               ? fields.keyRequirements.join("\n")
@@ -66,7 +66,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
       <div className="form-group">
         <label>Comprehensive Skills</label>
         <textarea
-          placeholder="React, Node.js, Frontend Architecture, UI/UX..."
+          placeholder="Extracted tech stack & skills..."
           value={fields.comprehensiveSkills}
           onChange={(e) => setFields({ ...fields, comprehensiveSkills: e.target.value })}
           rows={3}

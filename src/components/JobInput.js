@@ -1,4 +1,4 @@
-import { Share2 } from "lucide-react";
+import { Share2, ArrowLeftRight } from "lucide-react";
 
 export default function JobInput({
   postText,
@@ -14,10 +14,13 @@ export default function JobInput({
   screenshotData,
   handleParsePost,
   isSharedFromLinkedIn,
+  viewMode,
+  setViewMode,
+  hasExtracted,
 }) {
   return (
     <div className="card" style={{ height: "100%" }}>
-      <div className="card-header">
+      <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div className="card-title">Paste Job Description</div>
           {isSharedFromLinkedIn && (
@@ -39,13 +42,26 @@ export default function JobInput({
             </span>
           )}
         </div>
-        <span className="char-counter">{postText.length} chars</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span className="char-counter">{postText.length} chars</span>
+          {setViewMode && (
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setViewMode("workspace")}
+              title="Switch to Email Box"
+              aria-label="Switch to Email Box"
+            >
+              <ArrowLeftRight size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="form-group" style={{ flexGrow: 1 }}>
         <textarea
           className="post-input"
-          placeholder="Paste the LinkedIn post description or job listing content here. Our AI extractor will pull out the target email, position, skills, and manager details..."
+          placeholder="Paste job description or LinkedIn post..."
           value={postText}
           onChange={(e) => setPostText(e.target.value)}
         />
