@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth/next";
 import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 
-// Helper: build RFC 2822 MIME message using Nodemailer stream transport
 async function buildRawMessage(mailOptions) {
   const mail = nodemailer.createTransport({ streamTransport: true, newline: 'unix' });
   const rawBuffer = await new Promise((resolve, reject) => {
@@ -103,7 +102,6 @@ export async function POST(req) {
       mailOptions.attachments = [resumeAttachment];
     }
 
-    // Direct Gmail REST API sending using user Google session token
     const rawMessage = await buildRawMessage(mailOptions);
     const gmailRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
       method: "POST",
