@@ -42,6 +42,7 @@ function HomeContent() {
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
         {am.status === "unauthenticated" && (
           <div
+            className="preview-banner"
             style={{
               padding: "0.75rem 1.25rem",
               marginBottom: "1.25rem",
@@ -87,7 +88,6 @@ function HomeContent() {
             isParsing={am.isParsing}
             screenshotData={am.screenshotData}
             handleParsePost={am.handleParsePost}
-            isSharedFromLinkedIn={am.isSharedFromLinkedIn}
             viewMode={am.viewMode}
             setViewMode={am.setViewMode}
             hasExtracted={Boolean(am.fields.email || am.fields.jobTitle)}

@@ -1,4 +1,4 @@
-import { Share2, ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 
 export default function JobInput({
   postText,
@@ -13,7 +13,6 @@ export default function JobInput({
   isParsing,
   screenshotData,
   handleParsePost,
-  isSharedFromLinkedIn,
   viewMode,
   setViewMode,
   hasExtracted,
@@ -23,24 +22,6 @@ export default function JobInput({
       <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div className="card-title">Paste Job Description</div>
-          {isSharedFromLinkedIn && (
-            <span
-              style={{
-                fontSize: "0.7rem",
-                fontWeight: 600,
-                padding: "0.15rem 0.5rem",
-                borderRadius: "9999px",
-                background: "rgba(10, 102, 194, 0.15)",
-                color: "#0a66c2",
-                border: "1px solid rgba(10, 102, 194, 0.3)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.25rem",
-              }}
-            >
-              <Share2 size={11} /> Shared from LinkedIn
-            </span>
-          )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <span className="char-counter">{postText.length} chars</span>
@@ -61,7 +42,7 @@ export default function JobInput({
       <div className="form-group" style={{ flexGrow: 1 }}>
         <textarea
           className="post-input"
-          placeholder="Paste job description or LinkedIn post..."
+          placeholder="Paste job description text..."
           value={postText}
           onChange={(e) => setPostText(e.target.value)}
         />
@@ -82,16 +63,13 @@ export default function JobInput({
                 const clipText = await navigator.clipboard.readText();
                 if (clipText && clipText.trim()) {
                   setPostText(clipText);
-                  if (clipText.includes("linkedin.com/")) {
-                    handleParsePost(clipText);
-                  }
                 }
               }
             } catch (err) {
               console.warn("Clipboard access denied or unavailable:", err);
             }
           }}
-          title="Paste link or text from clipboard and auto-extract"
+          title="Paste text from clipboard"
         >
           Paste
         </button>
@@ -120,7 +98,7 @@ export default function JobInput({
       <button
         className="btn btn-primary"
         disabled={isParsing || (!postText.trim() && !screenshotData)}
-        onClick={handleParsePost}
+        onClick={() => handleParsePost()}
       >
         {isParsing ? (
           <>

@@ -277,6 +277,17 @@ h1 {
     padding-left: max(1rem, env(safe-area-inset-left));
     padding-right: max(1rem, env(safe-area-inset-right));
   }
+
+  .preview-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    text-align: center;
+    gap: 0.75rem !important;
+  }
+
+  .preview-banner .btn {
+    width: 100% !important;
+  }
 }
 
 .dashboard-grid {
