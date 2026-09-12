@@ -57,7 +57,7 @@ function HomeContent() {
             }}
           >
             <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
-              <strong>Preview Mode:</strong> Sign in with Google to extract jobs, tailor resumes, and send applications.
+              Sign in with Google to extract jobs, tailor resumes, and send applications.
             </span>
             <button
               className="btn btn-primary"
