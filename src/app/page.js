@@ -12,7 +12,7 @@ import HistoryTab from "@/components/HistoryTab";
 import EmailPreviewTab from "@/components/EmailPreviewTab";
 import { useAutoMailer } from "@/hooks/useAutoMailer";
 
-import { ArrowLeftRight, Mail } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 
 function HomeContent() {
   const { theme, setTheme } = useTheme();

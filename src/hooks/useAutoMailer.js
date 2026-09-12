@@ -241,7 +241,6 @@ export function useAutoMailer() {
 
   const compiled = useMemo(() => {
     const pTitle = fields.jobTitle || "[Position Title]";
-    const pSkills = fields.skills || "";
     const cName = fields.company ? fields.company : "your company";
 
     const uName = settings.USER_NAME || "[Your Name]";
@@ -259,10 +258,6 @@ export function useAutoMailer() {
     if (settings.USER_GITHUB) contactParts.push(settings.USER_GITHUB);
     if (settings.USER_PORTFOLIO) contactParts.push(settings.USER_PORTFOLIO);
     const contactBlock = contactParts.length > 0 ? `\n${contactParts.join(" | ")}` : "";
-
-    const reqs = Array.isArray(fields.keyRequirements) && fields.keyRequirements.length > 0
-      ? fields.keyRequirements.slice(0, 3)
-      : [];
 
     let body = "";
     let sub = "";
