@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowLeftRight } from "lucide-react";
+
 export default function HelpDrawer({ helpOpen, setHelpOpen }) {
   return (
     <>
@@ -8,20 +10,18 @@ export default function HelpDrawer({ helpOpen, setHelpOpen }) {
         onClick={() => setHelpOpen(false)}
       ></div>
 
-      <div className={`settings-drawer ${helpOpen ? "open" : ""}`} style={{ maxWidth: "480px" }}>
+      <div className={`settings-drawer ${helpOpen ? "open" : ""}`} style={{ maxWidth: "440px" }}>
         <div className="drawer-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: "700" }}>How to Use Outlio</h2>
-          </div>
+          <h2 style={{ fontSize: "1.2rem", fontWeight: "700" }}>Quick Guide</h2>
           <button className="close-btn" onClick={() => setHelpOpen(false)}>×</button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", padding: "0.5rem 0" }}>
-          <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: "1.5" }}>
-            Outlio automates cold job applications and recruiter outreach using AI and your connected Gmail account.
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", padding: "0.25rem 0" }}>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: "1.5" }}>
+            Apply to jobs in 3 quick steps:
           </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             
             {/* Step 1 */}
             <div
@@ -32,11 +32,11 @@ export default function HelpDrawer({ helpOpen, setHelpOpen }) {
                 border: "1px solid var(--glass-border)",
               }}
             >
-              <h3 style={{ fontSize: "0.92rem", fontWeight: "600", marginBottom: "0.2rem" }}>
-                1. Extract Job Details
+              <h3 style={{ fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.25rem" }}>
+                1. Paste & Extract
               </h3>
-              <p style={{ fontSize: "0.83rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                Paste a job description or upload a screenshot, then click <strong>Extract Details</strong>.
+              <p style={{ fontSize: "0.825rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                Paste the job posting text (or upload a screenshot) and click <strong>Extract</strong>.
               </p>
             </div>
 
@@ -49,11 +49,11 @@ export default function HelpDrawer({ helpOpen, setHelpOpen }) {
                 border: "1px solid var(--glass-border)",
               }}
             >
-              <h3 style={{ fontSize: "0.92rem", fontWeight: "600", marginBottom: "0.2rem" }}>
-                2. Switch Between Views
+              <h3 style={{ fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.25rem" }}>
+                2. Review & Tailor
               </h3>
-              <p style={{ fontSize: "0.83rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                Use the switch button to toggle between the Job Description box and Email Preview.
+              <p style={{ fontSize: "0.825rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                Check the email draft & resume attachment. Customize your signature details in <strong>Settings</strong> anytime.
               </p>
             </div>
 
@@ -66,45 +66,11 @@ export default function HelpDrawer({ helpOpen, setHelpOpen }) {
                 border: "1px solid var(--glass-border)",
               }}
             >
-              <h3 style={{ fontSize: "0.92rem", fontWeight: "600", marginBottom: "0.2rem" }}>
-                3. Resume & Profile
+              <h3 style={{ fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.25rem" }}>
+                3. Send via Gmail
               </h3>
-              <p style={{ fontSize: "0.83rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                Upload a PDF resume or set up a LaTeX template in <strong>Settings</strong> for auto-tailored resumes.
-              </p>
-            </div>
-
-            {/* Step 4 */}
-            <div
-              style={{
-                padding: "0.85rem 1rem",
-                borderRadius: "var(--radius-md)",
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--glass-border)",
-              }}
-            >
-              <h3 style={{ fontSize: "0.92rem", fontWeight: "600", marginBottom: "0.2rem" }}>
-                4. Send Direct Email
-              </h3>
-              <p style={{ fontSize: "0.83rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                Click <strong>Send Email</strong> to send your job application instantly via Gmail.
-              </p>
-            </div>
-
-            {/* Step 5 */}
-            <div
-              style={{
-                padding: "0.85rem 1rem",
-                borderRadius: "var(--radius-md)",
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--glass-border)",
-              }}
-            >
-              <h3 style={{ fontSize: "0.92rem", fontWeight: "600", marginBottom: "0.2rem" }}>
-                5. Track Applications
-              </h3>
-              <p style={{ fontSize: "0.83rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                View sent applications and generate follow-up emails anytime from the <strong>History</strong> tab.
+              <p style={{ fontSize: "0.825rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                Click <strong>Send</strong> to dispatch the application directly from your logged-in Gmail account.
               </p>
             </div>
 
