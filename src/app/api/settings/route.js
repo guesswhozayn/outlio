@@ -1,13 +1,25 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-const isLocal = !process.env.KV_REST_API_URL;
+function getRedisClient() {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (url && token) {
+    try {
+      return new Redis({ url, token });
+    } catch (err) {
+      console.warn("Failed to initialize Upstash Redis client:", err);
+      return null;
+    }
+  }
+  return null;
+}
 
 const getLocalKvPath = () => {
   try {
@@ -55,15 +67,39 @@ export async function GET() {
     }
 
     const email = session.user.email;
-    let settings;
-    
-    if (isLocal) {
-      settings = await getLocalSettings(email);
+    const redis = getRedisClient();
+    let settings = null;
+    let storageType = 'local_file';
+
+    if (redis) {
+      try {
+        settings = await redis.get(`settings:${email}`);
+        storageType = 'redis';
+      } catch (redisErr) {
+        console.error("Redis get failed, falling back to local:", redisErr);
+        settings = await getLocalSettings(email);
+        storageType = 'local_fallback';
+      }
     } else {
-      settings = await kv.get(`settings:${email}`);
+      settings = await getLocalSettings(email);
+      storageType = LOCAL_KV_PATH.startsWith('/tmp') ? 'ephemeral' : 'local_file';
     }
 
-    return NextResponse.json(settings || {});
+    const isCloud = storageType === 'redis';
+    const cleanSettings = settings && typeof settings === 'object' ? { ...settings } : {};
+    delete cleanSettings._sync;
+
+    return NextResponse.json({
+      ...cleanSettings,
+      _sync: {
+        isCloud,
+        storageType,
+      }
+    }, {
+      headers: {
+        'x-storage-backend': storageType,
+      }
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -79,13 +115,35 @@ export async function POST(req) {
     const email = session.user.email;
     const data = await req.json();
 
-    if (isLocal) {
-      await setLocalSettings(email, data);
+    const toSave = { ...data };
+    delete toSave._sync;
+
+    const redis = getRedisClient();
+    let storageType = 'local_file';
+
+    if (redis) {
+      try {
+        await redis.set(`settings:${email}`, toSave);
+        storageType = 'redis';
+      } catch (redisErr) {
+        console.error("Redis set failed, falling back to local:", redisErr);
+        await setLocalSettings(email, toSave);
+        storageType = 'local_fallback';
+      }
     } else {
-      await kv.set(`settings:${email}`, data);
+      await setLocalSettings(email, toSave);
+      storageType = LOCAL_KV_PATH.startsWith('/tmp') ? 'ephemeral' : 'local_file';
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      isCloud: storageType === 'redis',
+      storageType,
+    }, {
+      headers: {
+        'x-storage-backend': storageType,
+      }
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

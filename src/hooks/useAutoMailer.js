@@ -66,8 +66,12 @@ export function useAutoMailer() {
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [logs, setLogs] = useState([]);
 
+  const [syncStatus, setSyncStatus] = useState({ isCloud: false, storageType: "local_file" });
+
   const settingsRef = useRef(settings);
-  settingsRef.current = settings;
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
   const hasInitializedUserRef = useRef(null);
 
   const fileInputRef = useRef(null);
@@ -167,8 +171,24 @@ export function useAutoMailer() {
         }
       }
 
+      let pendingSettings = null;
+      try {
+        const pendingRaw = typeof window !== "undefined" ? localStorage.getItem("outlio_pending_settings") : null;
+        if (pendingRaw) {
+          pendingSettings = JSON.parse(pendingRaw);
+          localStorage.removeItem("outlio_pending_settings");
+        }
+      } catch (err) {
+        console.warn("Could not read pending settings:", err);
+      }
+
       const res = await fetch("/api/settings", { cache: "no-store" });
       const parsed = await res.json();
+
+      if (parsed && parsed._sync) {
+        setSyncStatus(parsed._sync);
+        delete parsed._sync;
+      }
 
       let finalSettings = { ...localSettings };
 
@@ -177,6 +197,16 @@ export function useAutoMailer() {
         if (hasActualData) {
           finalSettings = { ...finalSettings, ...parsed };
         }
+      }
+
+      if (pendingSettings && Object.keys(pendingSettings).length > 0) {
+        finalSettings = { ...finalSettings, ...pendingSettings };
+        fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalSettings),
+        }).catch(err => console.error("Auto-sync pending settings failed:", err));
+        addLog("Pending configuration settings applied to your account.", "success");
       }
 
       if (email && Object.keys(finalSettings).length > 0) {
@@ -293,8 +323,18 @@ export function useAutoMailer() {
   };
 
   const handleSaveSettings = async (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
     if (status === "unauthenticated") {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("outlio_pending_settings", JSON.stringify(settings));
+        }
+        addLog("Settings cached locally. Redirecting to Google sign-in...", "info");
+      } catch (err) {
+        console.warn("Could not cache pending settings:", err);
+      }
       signIn("google");
       return;
     }
@@ -320,7 +360,14 @@ export function useAutoMailer() {
         throw new Error(errorData.error || "Failed to save settings");
       }
 
-      addLog("Settings saved successfully.", "success");
+      const resData = await res.json();
+      if (resData.isCloud) {
+        setSyncStatus({ isCloud: true, storageType: "redis" });
+        addLog("Settings saved and synced to cloud (accessible across all devices).", "success");
+      } else {
+        setSyncStatus({ isCloud: false, storageType: resData.storageType || "local_file" });
+        addLog("Settings saved to this device. (Connect Upstash Redis in Vercel to sync across all devices).", "info");
+      }
       setSettingsOpen(false);
     } catch (e) {
       addLog(`Error saving settings: ${e.message}`, "error");
@@ -607,5 +654,6 @@ export function useAutoMailer() {
     handleImageUploadClick, handleImageChange, handleParsePost,
     handleUploadClick, handleFileChange, handleTailorResume, handleSendEmail,
     handleSaveSettings,
+    syncStatus,
   };
 }
