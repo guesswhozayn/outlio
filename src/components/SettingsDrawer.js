@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { FALLBACK_FREE_MODELS } from "@/lib/openrouter";
-import { Cloud, CheckCircle2, Download, Upload } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 
 export default function SettingsDrawer({
   settingsOpen,
@@ -106,46 +106,6 @@ export default function SettingsDrawer({
           <h2>Configuration Settings</h2>
           <button className="close-btn" onClick={() => setSettingsOpen(false)}>×</button>
         </div>
-
-        {syncStatus?.isCloud ? (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.65rem 0.85rem",
-            borderRadius: "var(--radius-sm)",
-            background: "rgba(16, 185, 129, 0.12)",
-            border: "1px solid rgba(16, 185, 129, 0.3)",
-            color: "#34d399",
-            fontSize: "0.8rem",
-            marginBottom: "0.5rem",
-          }}>
-            <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
-            <span><strong>Cloud Synced</strong>: Settings are saved to your account and sync across all devices.</span>
-          </div>
-        ) : (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.3rem",
-            padding: "0.65rem 0.85rem",
-            borderRadius: "var(--radius-sm)",
-            background: "rgba(59, 130, 246, 0.08)",
-            border: "1px solid rgba(59, 130, 246, 0.25)",
-            color: "var(--text-secondary)",
-            fontSize: "0.78rem",
-            lineHeight: "1.35",
-            marginBottom: "0.5rem",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--accent-cyan)", fontWeight: 600 }}>
-              <Cloud size={15} style={{ flexShrink: 0 }} />
-              <span>Storage: Local Device Storage</span>
-            </div>
-            <span>
-              To automatically sync across multiple devices in Vercel, connect <strong>Upstash Redis</strong> (free via Vercel Marketplace) and add <code>UPSTASH_REDIS_REST_URL</code> & <code>UPSTASH_REDIS_REST_TOKEN</code>.
-            </span>
-          </div>
-        )}
 
         <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           
