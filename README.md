@@ -102,7 +102,7 @@ outlio/
 
 ### Hybrid Browser & Cloud Persistence
 - **Client Storage (`localforage`)**: PDF resumes and history logs persist securely in browser IndexedDB.
-- **Settings Persistence**: User signature details and LaTeX templates persist across devices via settings storage.
+- **Settings Persistence**: User signature details and LaTeX templates persist across devices via Upstash Redis (or Vercel KV) in production, and via `local_kv.json` during local development.
 
 ---
 
@@ -113,6 +113,7 @@ outlio/
 - **Styling**: Vanilla CSS Design System with dark/light themes & glassmorphism
 - **Auth & API**: [NextAuth 4.24](https://next-auth.js.org/) with Google OAuth & Gmail REST API
 - **AI Engine**: [OpenRouter API](https://openrouter.ai/) (Vision & Text LLMs)
+- **Storage / Cloud Sync**: [Upstash Redis](https://upstash.com/) (`@upstash/redis`)
 - **Icons**: [Lucide React](https://lucide.dev/)
 
 ---
@@ -127,6 +128,12 @@ NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 OPENROUTER_API_KEY="your-openrouter-api-key"
+
+# Optional: Cloud persistence across devices (Vercel / Production)
+# Connect Upstash Redis via Vercel Marketplace or upstash.com:
+UPSTASH_REDIS_REST_URL="https://your-upstash-instance.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your-upstash-rest-token"
+# (Legacy Vercel KV env vars KV_REST_API_URL and KV_REST_API_TOKEN are also supported)
 ```
 
 ---

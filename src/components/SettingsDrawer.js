@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FALLBACK_FREE_MODELS } from "@/lib/openrouter";
+import { Cloud, CheckCircle2, Download, Upload } from "lucide-react";
 
 export default function SettingsDrawer({
   settingsOpen,
   setSettingsOpen,
-  settings,
+  settings = {},
   setSettings,
   isFetchingModels,
   availableModels = [],
   isSavingSettings,
-  handleSaveSettings
+  handleSaveSettings,
+  syncStatus = { isCloud: false, storageType: "local_file" }
 }) {
   const allModelsMap = new Map();
+  const importFileRef = useRef(null);
 
   FALLBACK_FREE_MODELS.forEach((m) => {
     allModelsMap.set(m.name, m);
@@ -25,7 +28,7 @@ export default function SettingsDrawer({
     });
   }
 
-  const currentModel = settings.MODEL || "openrouter/free";
+  const currentModel = settings?.MODEL || "openrouter/free";
   if (currentModel && currentModel !== "custom" && currentModel !== "__custom__" && !allModelsMap.has(currentModel)) {
     allModelsMap.set(currentModel, {
       name: currentModel,
@@ -43,6 +46,57 @@ export default function SettingsDrawer({
 
   const [isCustomMode, setIsCustomMode] = useState(false);
 
+  const handleExport = () => {
+    try {
+      const exportData = {
+        MODEL: settings?.MODEL || "openrouter/free",
+        USER_NAME: settings?.USER_NAME || "",
+        USER_PHONE: settings?.USER_PHONE || "",
+        USER_LINKEDIN: settings?.USER_LINKEDIN || "",
+        USER_GITHUB: settings?.USER_GITHUB || "",
+        USER_PORTFOLIO: settings?.USER_PORTFOLIO || "",
+        LATEX_RESUME: settings?.LATEX_RESUME || "",
+        exportedAt: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `outlio_settings_${(settings?.USER_NAME || "profile").toLowerCase().replace(/[^a-z0-9]/gi, "_")}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to export settings:", err);
+    }
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (imported && typeof imported === "object") {
+          setSettings((prev) => ({
+            ...prev,
+            MODEL: imported.MODEL || prev.MODEL || "openrouter/free",
+            USER_NAME: imported.USER_NAME || prev.USER_NAME || "",
+            USER_PHONE: imported.USER_PHONE || prev.USER_PHONE || "",
+            USER_LINKEDIN: imported.USER_LINKEDIN || prev.USER_LINKEDIN || "",
+            USER_GITHUB: imported.USER_GITHUB !== undefined ? imported.USER_GITHUB : (prev.USER_GITHUB || ""),
+            USER_PORTFOLIO: imported.USER_PORTFOLIO !== undefined ? imported.USER_PORTFOLIO : (prev.USER_PORTFOLIO || ""),
+            LATEX_RESUME: imported.LATEX_RESUME !== undefined ? imported.LATEX_RESUME : (prev.LATEX_RESUME || ""),
+          }));
+        }
+      } catch {
+        alert("Invalid JSON settings file format.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   return (
     <>
       <div className={`overlay ${settingsOpen ? "active" : ""}`} onClick={() => setSettingsOpen(false)}></div>
@@ -52,6 +106,46 @@ export default function SettingsDrawer({
           <h2>Configuration Settings</h2>
           <button className="close-btn" onClick={() => setSettingsOpen(false)}>×</button>
         </div>
+
+        {syncStatus?.isCloud ? (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "0.65rem 0.85rem",
+            borderRadius: "var(--radius-sm)",
+            background: "rgba(16, 185, 129, 0.12)",
+            border: "1px solid rgba(16, 185, 129, 0.3)",
+            color: "#34d399",
+            fontSize: "0.8rem",
+            marginBottom: "0.5rem",
+          }}>
+            <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
+            <span><strong>Cloud Synced</strong>: Settings are saved to your account and sync across all devices.</span>
+          </div>
+        ) : (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.3rem",
+            padding: "0.65rem 0.85rem",
+            borderRadius: "var(--radius-sm)",
+            background: "rgba(59, 130, 246, 0.08)",
+            border: "1px solid rgba(59, 130, 246, 0.25)",
+            color: "var(--text-secondary)",
+            fontSize: "0.78rem",
+            lineHeight: "1.35",
+            marginBottom: "0.5rem",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--accent-cyan)", fontWeight: 600 }}>
+              <Cloud size={15} style={{ flexShrink: 0 }} />
+              <span>Storage: Local Device Storage</span>
+            </div>
+            <span>
+              To automatically sync across multiple devices in Vercel, connect <strong>Upstash Redis</strong> (free via Vercel Marketplace) and add <code>UPSTASH_REDIS_REST_URL</code> & <code>UPSTASH_REDIS_REST_TOKEN</code>.
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           
@@ -71,7 +165,7 @@ export default function SettingsDrawer({
                 outline: "none",
                 cursor: "pointer"
               }}
-              value={isCustomMode ? "__custom__" : (settings.MODEL || "openrouter/free")}
+              value={isCustomMode ? "__custom__" : (settings?.MODEL || "openrouter/free")}
               onChange={(e) => {
                 if (e.target.value === "__custom__") {
                   setIsCustomMode(true);
@@ -98,7 +192,7 @@ export default function SettingsDrawer({
               <input
                 type="text"
                 placeholder="e.g. anthropic/claude-3.5-sonnet"
-                value={settings.MODEL || ""}
+                value={settings?.MODEL || ""}
                 onChange={(e) => setSettings({ ...settings, MODEL: e.target.value })}
                 style={{ marginTop: "0.5rem" }}
                 autoFocus
@@ -119,7 +213,7 @@ export default function SettingsDrawer({
             <input
               type="text"
               placeholder="John Doe"
-              value={settings.USER_NAME}
+              value={settings?.USER_NAME || ""}
               onChange={(e) => setSettings({ ...settings, USER_NAME: e.target.value })}
               required
             />
@@ -130,7 +224,7 @@ export default function SettingsDrawer({
             <input
               type="text"
               placeholder="+1 (555) 000-0000"
-              value={settings.USER_PHONE}
+              value={settings?.USER_PHONE || ""}
               onChange={(e) => setSettings({ ...settings, USER_PHONE: e.target.value })}
               required
             />
@@ -141,7 +235,7 @@ export default function SettingsDrawer({
             <input
               type="text"
               placeholder="linkedin.com/in/user"
-              value={settings.USER_LINKEDIN}
+              value={settings?.USER_LINKEDIN || ""}
               onChange={(e) => setSettings({ ...settings, USER_LINKEDIN: e.target.value })}
               required
             />
@@ -152,7 +246,7 @@ export default function SettingsDrawer({
             <input
               type="text"
               placeholder="github.com/user"
-              value={settings.USER_GITHUB}
+              value={settings?.USER_GITHUB || ""}
               onChange={(e) => setSettings({ ...settings, USER_GITHUB: e.target.value })}
             />
           </div>
@@ -162,7 +256,7 @@ export default function SettingsDrawer({
             <input
               type="text"
               placeholder="portfolio.com"
-              value={settings.USER_PORTFOLIO}
+              value={settings?.USER_PORTFOLIO || ""}
               onChange={(e) => setSettings({ ...settings, USER_PORTFOLIO: e.target.value })}
             />
           </div>
@@ -176,7 +270,7 @@ export default function SettingsDrawer({
             <textarea
               style={{ flexGrow: 1, minHeight: "150px", fontFamily: "var(--font-mono)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: "0.85rem" }}
               placeholder="\documentclass{article}..."
-              value={settings.LATEX_RESUME}
+              value={settings?.LATEX_RESUME || ""}
               onChange={(e) => setSettings({ ...settings, LATEX_RESUME: e.target.value })}
             />
             <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
@@ -184,8 +278,54 @@ export default function SettingsDrawer({
             </small>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ marginTop: "1rem" }} disabled={isSavingSettings}>
-            {isSavingSettings ? "Saving..." : "Save"}
+          <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.5rem" }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleExport}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                fontSize: "0.825rem",
+                padding: "0.55rem 0.75rem",
+              }}
+              title="Download your settings as a JSON file to transfer between devices"
+            >
+              <Download size={14} />
+              <span>Export JSON</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => importFileRef.current?.click()}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                fontSize: "0.825rem",
+                padding: "0.55rem 0.75rem",
+              }}
+              title="Import settings from a previously saved JSON file"
+            >
+              <Upload size={14} />
+              <span>Import JSON</span>
+            </button>
+            <input
+              type="file"
+              ref={importFileRef}
+              accept=".json"
+              style={{ display: "none" }}
+              onChange={handleImport}
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }} disabled={isSavingSettings}>
+            {isSavingSettings ? "Saving..." : "Save Settings"}
           </button>
         </form>
       </div>

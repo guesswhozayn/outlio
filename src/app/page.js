@@ -179,6 +179,7 @@ function HomeContent() {
         availableModels={am.availableModels}
         isSavingSettings={am.isSavingSettings}
         handleSaveSettings={am.handleSaveSettings}
+        syncStatus={am.syncStatus}
       />
 
       <HelpDrawer
