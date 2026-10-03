@@ -1,6 +1,6 @@
 # Outlio
 
-Outlio is a streamlined, AI-powered job application outreach and resume tailoring assistant built with Next.js 16 (App Router), React 19, and OpenRouter API. It automates the workflow of extracting job requirements from posts or screenshots, tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching concise cold outreach emails directly through your connected Gmail account.
+Outlio is a streamlined, AI-powered job application outreach and resume tailoring assistant built with Next.js 16 (App Router), React 19, and Google Gemini API. It automates the workflow of extracting job requirements from posts or screenshots, tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching concise cold outreach emails directly through your connected Gmail account.
 
 ---
 
@@ -55,7 +55,7 @@ outlio/
     │   └── api/               # Serverless API routes
     │       ├── auth/          # NextAuth OAuth handler ([...nextauth])
     │       ├── compile-latex/ # LaTeX-to-PDF compilation service
-    │       ├── models/        # OpenRouter model discovery endpoint
+    │       ├── models/        # Gemini model discovery endpoint
     │       ├── parse/         # Multimodal LLM job extractor
     │       ├── send/          # Gmail REST API email dispatcher
     │       ├── settings/      # User settings persistence endpoint
@@ -74,7 +74,7 @@ outlio/
     │   └── useAutoMailer.js   # Application workbench state & logic
     └── lib/                   # Utility helpers
         ├── auth.js            # NextAuth configuration with Gmail OAuth scopes
-        └── openrouter.js      # OpenRouter API client & fallback models
+        └── gemini.js          # Google Gemini API client & fallback models
 ```
 
 ---
@@ -83,7 +83,11 @@ outlio/
 
 ### Multimodal Job Extraction
 - **Text & Screenshot Intake**: Paste raw job post text or upload listing screenshots for AI extraction.
-- **Structured Parsing**: Automatically extracts recruiter email, position title, company name, hiring manager name, core tech stack, and key requirements.
+- **Structured Parsing**: Automatically extracts recruiter email, position title, company name, hiring manager name, core tech stack, and key requirements using the latest Gemini models (e.g., `gemini-3.8-flash`, `gemini-3.5-flash`).
+
+### Bring Your Own Key (BYOK) Architecture
+- **User-Managed API Keys**: Users enter their own Google AI Studio Gemini API key directly in **Configuration Settings**, eliminating hardcoded dependencies or shared quotas.
+- **Dynamic Model Discovery**: Outlio queries available models directly from Google's Generative Language API using the user's key.
 
 ### Dynamic LaTeX Resume Tailoring & PDF Compilation
 - **AI Resume Customization**: Dynamically aligns qualifications and experience bullets in your LaTeX template with job requirements.
@@ -102,7 +106,7 @@ outlio/
 
 ### Hybrid Browser & Cloud Persistence
 - **Client Storage (`localforage`)**: PDF resumes and history logs persist securely in browser IndexedDB.
-- **Settings Persistence**: User signature details and LaTeX templates persist across devices via Upstash Redis (or Vercel KV) in production, and via `local_kv.json` during local development.
+- **Settings Persistence**: User signature details, Gemini API keys, and LaTeX templates persist across devices via Upstash Redis (or Vercel KV) in production, and via `local_kv.json` during local development.
 
 ---
 
@@ -112,7 +116,7 @@ outlio/
 - **Core**: [React 19.2](https://react.dev/), JavaScript
 - **Styling**: Vanilla CSS Design System with dark/light themes & glassmorphism
 - **Auth & API**: [NextAuth 4.24](https://next-auth.js.org/) with Google OAuth & Gmail REST API
-- **AI Engine**: [OpenRouter API](https://openrouter.ai/) (Vision & Text LLMs)
+- **AI Engine**: [Google Gemini API](https://ai.google.dev/) (BYOK architecture, latest Gemini 3.x models)
 - **Storage / Cloud Sync**: [Upstash Redis](https://upstash.com/) (`@upstash/redis`)
 - **Icons**: [Lucide React](https://lucide.dev/)
 
@@ -127,7 +131,9 @@ NEXTAUTH_SECRET="your-nextauth-secret"
 NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
-OPENROUTER_API_KEY="your-openrouter-api-key"
+
+# Optional: Server-side default Gemini API key (users can also provide their own key in Settings via BYOK)
+GEMINI_API_KEY=""
 
 # Optional: Cloud persistence across devices (Vercel / Production)
 # Connect Upstash Redis via Vercel Marketplace or upstash.com:

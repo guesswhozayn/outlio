@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { chatCompletion, DEFAULT_MODEL } from '@/lib/openrouter';
+import { generateGeminiContent, DEFAULT_MODEL } from '@/lib/gemini';
 
 export async function POST(req) {
   try {
@@ -10,7 +10,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { latexCode, jobDescription, model } = await req.json();
+    const { latexCode, jobDescription, model, apiKey } = await req.json();
+    const userApiKey = apiKey || req.headers.get('x-api-key');
 
     if (!latexCode) {
       return NextResponse.json({ error: "No base LaTeX resume provided." }, { status: 400 });
@@ -18,10 +19,7 @@ export async function POST(req) {
 
     const selectedModel = model || DEFAULT_MODEL;
 
-    const systemMessage = {
-      role: "system",
-      content: "You are an expert career coach and LaTeX developer. You strictly return valid LaTeX code without any markdown code blocks, explanations, or commentary.",
-    };
+    const systemInstruction = "You are an expert career coach and LaTeX developer. You strictly return valid LaTeX code without any markdown code blocks, explanations, or commentary.";
 
     const prompt = `
 You are an expert career coach and LaTeX developer.
@@ -46,12 +44,11 @@ Base LaTeX Resume:
 ${latexCode}
 `;
 
-    let responseText = await chatCompletion({
+    let responseText = await generateGeminiContent({
+      apiKey: userApiKey,
       model: selectedModel,
-      messages: [
-        systemMessage,
-        { role: "user", content: prompt },
-      ],
+      prompt,
+      systemInstruction,
     });
 
     let cleanLatex = responseText.trim();
