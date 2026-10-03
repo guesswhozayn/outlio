@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FALLBACK_FREE_MODELS } from "@/lib/openrouter";
+import { FALLBACK_MODELS, DEFAULT_MODEL } from "@/lib/gemini";
 import { Download, Upload } from "lucide-react";
 
 export default function SettingsDrawer({
@@ -16,7 +16,7 @@ export default function SettingsDrawer({
   const allModelsMap = new Map();
   const importFileRef = useRef(null);
 
-  FALLBACK_FREE_MODELS.forEach((m) => {
+  FALLBACK_MODELS.forEach((m) => {
     allModelsMap.set(m.name, m);
   });
 
@@ -28,19 +28,35 @@ export default function SettingsDrawer({
     });
   }
 
-  const currentModel = settings?.MODEL || "openrouter/free";
-  if (currentModel && currentModel !== "custom" && currentModel !== "__custom__" && !allModelsMap.has(currentModel)) {
+  const currentModel = settings?.MODEL || DEFAULT_MODEL;
+  if (
+    currentModel &&
+    currentModel !== "custom" &&
+    currentModel !== "__custom__" &&
+    currentModel.startsWith("gemini") &&
+    !allModelsMap.has(currentModel)
+  ) {
     allModelsMap.set(currentModel, {
       name: currentModel,
       displayName: currentModel,
-      isVision: false,
+      isVision: true,
     });
   }
 
+  const modelRank = {
+    "gemini-3.8-flash": 1,
+    "gemini-3.5-flash": 2,
+    "gemini-3.1-pro": 3,
+    "gemini-3.1-flash-lite": 4,
+    "gemini-2.5-pro": 5,
+    "gemini-2.5-flash": 6,
+  };
+
   const modelOptions = Array.from(allModelsMap.values());
   modelOptions.sort((a, b) => {
-    if (a.name === "openrouter/free") return -1;
-    if (b.name === "openrouter/free") return 1;
+    const rankA = modelRank[a.name] || 99;
+    const rankB = modelRank[b.name] || 99;
+    if (rankA !== rankB) return rankA - rankB;
     return (a.displayName || a.name).localeCompare(b.displayName || b.name);
   });
 
@@ -49,7 +65,8 @@ export default function SettingsDrawer({
   const handleExport = () => {
     try {
       const exportData = {
-        MODEL: settings?.MODEL || "openrouter/free",
+        GEMINI_API_KEY: settings?.GEMINI_API_KEY || "",
+        MODEL: settings?.MODEL || DEFAULT_MODEL,
         USER_NAME: settings?.USER_NAME || "",
         USER_PHONE: settings?.USER_PHONE || "",
         USER_LINKEDIN: settings?.USER_LINKEDIN || "",
@@ -80,7 +97,8 @@ export default function SettingsDrawer({
         if (imported && typeof imported === "object") {
           setSettings((prev) => ({
             ...prev,
-            MODEL: imported.MODEL || prev.MODEL || "openrouter/free",
+            GEMINI_API_KEY: imported.GEMINI_API_KEY !== undefined ? imported.GEMINI_API_KEY : (prev.GEMINI_API_KEY || ""),
+            MODEL: imported.MODEL || prev.MODEL || DEFAULT_MODEL,
             USER_NAME: imported.USER_NAME || prev.USER_NAME || "",
             USER_PHONE: imported.USER_PHONE || prev.USER_PHONE || "",
             USER_LINKEDIN: imported.USER_LINKEDIN || prev.USER_LINKEDIN || "",
@@ -110,6 +128,31 @@ export default function SettingsDrawer({
         <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           
           <div className="form-group">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+              <label style={{ margin: 0 }}>Gemini API Key (BYOK)</label>
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: "0.75rem", color: "var(--accent-cyan)", textDecoration: "none" }}
+              >
+                Get free key ↗
+              </a>
+            </div>
+            <input
+              type="password"
+              placeholder={settings?.GEMINI_API_KEY ? "••••••••••••••••••••" : "Paste your Google AI Studio API key"}
+              value={settings?.GEMINI_API_KEY || ""}
+              onChange={(e) => setSettings({ ...settings, GEMINI_API_KEY: e.target.value })}
+              autoComplete="off"
+              spellCheck="false"
+            />
+            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+              Your personal key is stored securely with your profile and used directly for job extraction and resume tailoring.
+            </small>
+          </div>
+
+          <div className="form-group">
             <label>
               AI Model {isFetchingModels && <span style={{ fontSize: "0.75rem", color: "var(--accent-cyan)" }}>(updating models...)</span>}
             </label>
@@ -125,7 +168,7 @@ export default function SettingsDrawer({
                 outline: "none",
                 cursor: "pointer"
               }}
-              value={isCustomMode ? "__custom__" : (settings?.MODEL || "openrouter/free")}
+              value={isCustomMode ? "__custom__" : (settings?.MODEL || DEFAULT_MODEL)}
               onChange={(e) => {
                 if (e.target.value === "__custom__") {
                   setIsCustomMode(true);
@@ -136,9 +179,7 @@ export default function SettingsDrawer({
               }}
             >
               {modelOptions.map((m) => {
-                const label = (m.displayName || m.name)
-                  .replace(/\s*\(free\)/gi, "")
-                  .replace(/^Free Models Router.*$/i, "Auto (Best Available)");
+                const label = m.displayName || m.name;
                 return (
                   <option key={m.name} value={m.name}>
                     {label}
@@ -151,7 +192,7 @@ export default function SettingsDrawer({
             {isCustomMode && (
               <input
                 type="text"
-                placeholder="e.g. anthropic/claude-3.5-sonnet"
+                placeholder="e.g. gemini-2.5-pro"
                 value={settings?.MODEL || ""}
                 onChange={(e) => setSettings({ ...settings, MODEL: e.target.value })}
                 style={{ marginTop: "0.5rem" }}
@@ -160,7 +201,7 @@ export default function SettingsDrawer({
             )}
             
             <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Select which model to use for job post extraction and resume tailoring.
+              Select which Gemini model to use for job post extraction and resume tailoring.
             </small>
           </div>
 

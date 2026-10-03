@@ -31,6 +31,17 @@ const fileToBase64 = async (fileOrBlob) => {
   return null;
 };
 
+export const INITIAL_SETTINGS = {
+  GEMINI_API_KEY: "",
+  MODEL: "gemini-3.8-flash",
+  USER_NAME: "",
+  USER_PHONE: "",
+  USER_LINKEDIN: "",
+  USER_GITHUB: "",
+  USER_PORTFOLIO: "",
+  LATEX_RESUME: "",
+};
+
 export function useAutoMailer() {
   const { data: session, status } = useSession();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
@@ -43,10 +54,7 @@ export function useAutoMailer() {
   const [manualEmailBody, setManualEmailBody] = useState("");
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
 
-  const [settings, setSettings] = useState({
-    MODEL: "openrouter/free",
-    USER_NAME: "", USER_PHONE: "", USER_LINKEDIN: "", USER_GITHUB: "", USER_PORTFOLIO: "", LATEX_RESUME: "",
-  });
+  const [settings, setSettings] = useState(INITIAL_SETTINGS);
 
   const [activeTab, setActiveTab] = useState("preview");
   const [viewMode, setViewMode] = useState("input");
@@ -84,12 +92,19 @@ export function useAutoMailer() {
     setLogs(prev => [...prev, { timestamp, message, type }]);
   }, []);
 
-  const fetchAvailableModels = useCallback(async () => {
+  const fetchAvailableModels = useCallback(async (keyOverride) => {
     setIsFetchingModels(true);
     try {
-      const res = await fetch("/api/models");
+      const apiKey = keyOverride !== undefined ? keyOverride : settingsRef.current.GEMINI_API_KEY;
+      const res = await fetch("/api/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey }),
+      });
       const data = await res.json();
-      if (res.ok) setAvailableModels(data.models || []);
+      if (res.ok && Array.isArray(data.models) && data.models.length > 0) {
+        setAvailableModels(data.models);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -126,7 +141,8 @@ export function useAutoMailer() {
           postText: textToParse,
           image: base64Image,
           mimeType: mimeType,
-          model: overrideModel || settingsRef.current.MODEL || "openrouter/free"
+          model: overrideModel || settingsRef.current.MODEL || "gemini-3.8-flash",
+          apiKey: settingsRef.current.GEMINI_API_KEY,
         }),
       });
 
@@ -152,6 +168,9 @@ export function useAutoMailer() {
 
     } catch (error) {
       addLog(`Error parsing post: ${error.message}`, "error");
+      if (error.message?.includes("Gemini API key")) {
+        setSettingsOpen(true);
+      }
     } finally {
       setIsParsing(false);
     }
@@ -192,11 +211,8 @@ export function useAutoMailer() {
 
       let finalSettings = { ...localSettings };
 
-      if (parsed && Object.keys(parsed).length > 0 && !parsed.error) {
-        const hasActualData = Object.values(parsed).some(val => val !== "");
-        if (hasActualData) {
-          finalSettings = { ...finalSettings, ...parsed };
-        }
+      if (parsed && typeof parsed === "object" && !parsed.error && Object.keys(parsed).length > 0) {
+        finalSettings = { ...finalSettings, ...parsed };
       }
 
       if (pendingSettings && Object.keys(pendingSettings).length > 0) {
@@ -217,14 +233,17 @@ export function useAutoMailer() {
         }
       }
 
-      const savedModel = finalSettings.MODEL || (finalSettings.GEMINI_MODEL && !finalSettings.GEMINI_MODEL.includes("gemini") ? finalSettings.GEMINI_MODEL : "openrouter/free");
+      let savedModel = finalSettings.MODEL || finalSettings.GEMINI_MODEL || "gemini-3.8-flash";
+      if (typeof savedModel !== "string" || !savedModel.startsWith("gemini") || savedModel.includes("gemini-2.0")) {
+        savedModel = "gemini-3.8-flash";
+      }
       finalSettings.MODEL = savedModel;
       if (!finalSettings.USER_NAME && session?.user?.name) {
         finalSettings.USER_NAME = session.user.name;
       }
 
-      setSettings(prev => ({ ...prev, ...finalSettings }));
-      fetchAvailableModels();
+      setSettings({ ...INITIAL_SETTINGS, ...finalSettings });
+      fetchAvailableModels(finalSettings.GEMINI_API_KEY);
 
       try {
         const storedHistory = (await localforage.getItem("outlio_history")) || (await localforage.getItem("automailer_history"));
@@ -369,6 +388,7 @@ export function useAutoMailer() {
         addLog("Settings saved to this device. (Connect Upstash Redis in Vercel to sync across all devices).", "info");
       }
       setSettingsOpen(false);
+      fetchAvailableModels(settings.GEMINI_API_KEY);
     } catch (e) {
       addLog(`Error saving settings: ${e.message}`, "error");
     } finally {
@@ -478,7 +498,8 @@ export function useAutoMailer() {
         body: JSON.stringify({
           latexCode: tailoredLatexTemplate,
           jobDescription: postText || fields.comprehensiveSkills || fields.skills || "Software Engineering Role",
-          model: settings.MODEL || "openrouter/free"
+          model: settings.MODEL || "gemini-3.8-flash",
+          apiKey: settings.GEMINI_API_KEY,
         })
       });
       const tailorData = await tailorRes.json();
@@ -508,6 +529,9 @@ export function useAutoMailer() {
 
     } catch (error) {
       addLog(`Error tailoring resume: ${error.message}`, "error");
+      if (error.message?.includes("Gemini API key")) {
+        setSettingsOpen(true);
+      }
     } finally {
       setIsTailoring(false);
     }

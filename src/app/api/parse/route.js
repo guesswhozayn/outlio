@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { chatCompletion, extractJson, DEFAULT_MODEL } from '@/lib/openrouter';
+import { generateGeminiContent, extractJson, DEFAULT_MODEL } from '@/lib/gemini';
 
 export async function POST(req) {
   try {
@@ -10,7 +10,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { postText, image, mimeType, model } = await req.json();
+    const { postText, image, mimeType, model, apiKey } = await req.json();
+    const userApiKey = apiKey || req.headers.get('x-api-key');
 
     const selectedModel = model || DEFAULT_MODEL;
 
@@ -40,35 +41,16 @@ LinkedIn Post / Job Description:
 ${postText || "(See attached image)"}
 `;
 
-    const systemMessage = {
-      role: "system",
-      content: "You are an expert AI parser that extracts structured information from job posts and LinkedIn listings. You MUST return strictly a raw, valid JSON object matching the requested schema. Do not enclose in markdown ticks if possible, and do not provide any explanation outside the JSON.",
-    };
+    const systemInstruction = "You are an expert AI parser that extracts structured information from job posts and LinkedIn listings. You MUST return strictly a raw, valid JSON object matching the requested schema. Do not enclose in markdown ticks if possible, and do not provide any explanation outside the JSON.";
 
-    let userContent;
-    if (image) {
-      userContent = [
-        {
-          type: "text",
-          text: prompt,
-        },
-        {
-          type: "image_url",
-          image_url: {
-            url: `data:${mimeType || 'image/png'};base64,${image}`,
-          },
-        },
-      ];
-    } else {
-      userContent = prompt;
-    }
-
-    const rawResponse = await chatCompletion({
+    const rawResponse = await generateGeminiContent({
+      apiKey: userApiKey,
       model: selectedModel,
-      messages: [
-        systemMessage,
-        { role: "user", content: userContent },
-      ],
+      prompt,
+      systemInstruction,
+      image,
+      mimeType,
+      responseJson: true,
     });
 
     const parsedData = extractJson(rawResponse);

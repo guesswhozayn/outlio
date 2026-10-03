@@ -85,8 +85,18 @@ export async function GET() {
       storageType = LOCAL_KV_PATH.startsWith('/tmp') ? 'ephemeral' : 'local_file';
     }
 
-    const isCloud = storageType === 'redis';
-    const cleanSettings = settings && typeof settings === 'object' ? { ...settings } : {};
+    let cleanSettings = {};
+    if (settings) {
+      if (typeof settings === 'string') {
+        try {
+          cleanSettings = JSON.parse(settings);
+        } catch {
+          cleanSettings = {};
+        }
+      } else if (typeof settings === 'object') {
+        cleanSettings = { ...settings };
+      }
+    }
     delete cleanSettings._sync;
 
     return NextResponse.json({
