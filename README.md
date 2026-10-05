@@ -31,6 +31,7 @@ Outlio is a streamlined, AI-powered job application outreach and resume tailorin
 Job searching often involves repetitive manual tasks: extracting recruiter emails, tweaking resume bullet points for ATS keywords, building LaTeX files, and writing cold emails.
 
 Outlio consolidates these steps into a unified workbench:
+
 1. **Paste or Upload**: Supply a job description or screenshot of a job post.
 2. **Extract & Preview**: Outlio's AI parses recruiter contact details and generates a concise outreach email.
 3. **Send via Gmail**: Click **Send** to dispatch your application directly through your connected Gmail account.
@@ -82,29 +83,36 @@ outlio/
 ## Core Features
 
 ### Multimodal Job Extraction
+
 - **Text & Screenshot Intake**: Paste raw job post text or upload listing screenshots for AI extraction.
 - **Structured Parsing**: Automatically extracts recruiter email, position title, company name, hiring manager name, core tech stack, and key requirements using the latest Gemini models (e.g., `gemini-3.8-flash`, `gemini-3.5-flash`).
 
 ### Bring Your Own Key (BYOK) Architecture
+
 - **User-Managed API Keys**: Users enter their own Google AI Studio Gemini API key directly in **Configuration Settings**, eliminating hardcoded dependencies or shared quotas.
 - **Dynamic Model Discovery**: Outlio queries available models directly from Google's Generative Language API using the user's key.
 
 ### Dynamic LaTeX Resume Tailoring & PDF Compilation
+
 - **AI Resume Customization**: Dynamically aligns qualifications and experience bullets in your LaTeX template with job requirements.
 - **In-Browser PDF Compilation**: Compiles LaTeX source code directly to a clean PDF resume attached to your email.
 
 ### Ultra-Concise Outreach Emails & Follow-Ups
+
 - **Concise Templates**: Automatically generates short, impactful outreach emails formatted as `Application for [Job Title] – [Your Name]`.
 - **Follow-Up Generator**: Re-engage recruiters from the **History** tab with polite follow-up emails and re-attached resumes.
 
 ### Direct Gmail Integration
+
 - **Google OAuth Session Dispatch**: Applications are sent directly through Gmail REST API using your authenticated Google account session.
 
 ### Instant View Switching & User Preview Mode
+
 - **View Toggle**: Switch between Job Description input and Email Preview with a single click (`<ArrowLeftRight />`).
 - **Visitor Preview Mode**: Unauthenticated visitors can explore the full UI; performing actions seamlessly prompts Google Sign-In.
 
 ### Hybrid Browser & Cloud Persistence
+
 - **Client Storage (`localforage`)**: PDF resumes and history logs persist securely in browser IndexedDB.
 - **Settings Persistence**: User signature details, Gemini API keys, and LaTeX templates persist across devices via Supabase in production, and via `local_kv.json` during local development.
 
@@ -153,10 +161,8 @@ create table if not exists user_settings (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Optional: Enable Row Level Security (RLS)
 alter table user_settings enable row level security;
 
--- Policy allowing access with service role key (or anon key if used)
 create policy "Allow server full access" on user_settings
   for all using (true) with check (true);
 ```
@@ -166,18 +172,21 @@ create policy "Allow server full access" on user_settings
 ## Getting Started
 
 ### Prerequisites
+
 - **Node.js**: `20.x` or higher
 - **npm**: `9.x` or higher
 
 ### Installation & Setup
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/guesswhozayn/outlio.git
    cd outlio
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
@@ -186,6 +195,7 @@ create policy "Allow server full access" on user_settings
    Populate your `.env.local` file with the environment variables listed above.
 
 4. **Start local development server**:
+
    ```bash
    npm run dev
    ```
@@ -207,12 +217,12 @@ create policy "Allow server full access" on user_settings
 
 ## Available Scripts
 
-| Script | Command | Purpose |
-| --- | --- | --- |
-| `dev` | `npm run dev` | Runs the Next.js development server with Turbopack |
-| `build` | `npm run build` | Compiles an optimized production build |
-| `start` | `npm run start` | Starts the production server |
-| `lint` | `npm run lint` | Runs ESLint across all source files |
+| Script  | Command         | Purpose                                            |
+| ------- | --------------- | -------------------------------------------------- |
+| `dev`   | `npm run dev`   | Runs the Next.js development server with Turbopack |
+| `build` | `npm run build` | Compiles an optimized production build             |
+| `start` | `npm run start` | Starts the production server                       |
+| `lint`  | `npm run lint`  | Runs ESLint across all source files                |
 
 ---
 

@@ -52,7 +52,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const email = session.user.email;
+    const email = session.user.email?.toLowerCase().trim();
+    if (!email) {
+      return NextResponse.json({ error: "No email associated with session" }, { status: 400 });
+    }
     const supabase = getSupabaseClient();
     let settings = null;
     let storageType = 'local_file';
@@ -124,7 +127,10 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const email = session.user.email;
+    const email = session.user.email?.toLowerCase().trim();
+    if (!email) {
+      return NextResponse.json({ error: "No email associated with session" }, { status: 400 });
+    }
     const data = await req.json();
 
     const toSave = { ...data };
