@@ -129,7 +129,7 @@ export default function SettingsDrawer({
           
           <div className="form-group">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-              <label style={{ margin: 0 }}>Gemini API Key (BYOK)</label>
+              <label style={{ margin: 0 }}>Gemini API Key</label>
               <a
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
