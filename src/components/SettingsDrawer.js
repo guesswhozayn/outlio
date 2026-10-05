@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { FALLBACK_MODELS, DEFAULT_MODEL } from "@/lib/gemini";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, Cloud, HardDrive } from "lucide-react";
 
 export default function SettingsDrawer({
   settingsOpen,
@@ -124,6 +124,44 @@ export default function SettingsDrawer({
           <h2>Configuration Settings</h2>
           <button className="close-btn" onClick={() => setSettingsOpen(false)}>×</button>
         </div>
+
+        {syncStatus?.isCloud ? (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.6rem",
+            padding: "0.65rem 0.85rem",
+            borderRadius: "var(--radius-md)",
+            background: "rgba(34, 197, 94, 0.1)",
+            border: "1px solid rgba(34, 197, 94, 0.3)",
+            fontSize: "0.8rem",
+          }}>
+            <Cloud size={16} style={{ color: "#22c55e", flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Cloud Sync Active</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Synced across devices via Supabase</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.3rem",
+            padding: "0.65rem 0.85rem",
+            borderRadius: "var(--radius-md)",
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--glass-border)",
+            fontSize: "0.8rem",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <HardDrive size={15} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Device Storage (Local)</span>
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+              Settings are saved on this device only. Connect <strong>Supabase</strong> to sync across all your devices.
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           

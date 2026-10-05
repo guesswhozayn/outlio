@@ -381,11 +381,11 @@ export function useAutoMailer() {
 
       const resData = await res.json();
       if (resData.isCloud) {
-        setSyncStatus({ isCloud: true, storageType: "redis" });
-        addLog("Settings saved and synced to cloud (accessible across all devices).", "success");
+        setSyncStatus({ isCloud: true, storageType: resData.storageType || "supabase" });
+        addLog("Settings saved and synced to cloud (Supabase).", "success");
       } else {
         setSyncStatus({ isCloud: false, storageType: resData.storageType || "local_file" });
-        addLog("Settings saved to this device. (Connect Upstash Redis in Vercel to sync across all devices).", "info");
+        addLog("Settings saved to this device. (Connect Supabase to sync across all devices).", "info");
       }
       setSettingsOpen(false);
       fetchAvailableModels(settings.GEMINI_API_KEY);

@@ -1,25 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { Redis } from '@upstash/redis';
+import { getSupabaseClient } from '@/lib/supabase';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
-
-function getRedisClient() {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  if (url && token) {
-    try {
-      return new Redis({ url, token });
-    } catch (err) {
-      console.warn("Failed to initialize Upstash Redis client:", err);
-      return null;
-    }
-  }
-  return null;
-}
 
 const getLocalKvPath = () => {
   try {
@@ -67,16 +53,30 @@ export async function GET() {
     }
 
     const email = session.user.email;
-    const redis = getRedisClient();
+    const supabase = getSupabaseClient();
     let settings = null;
     let storageType = 'local_file';
 
-    if (redis) {
+    if (supabase) {
       try {
-        settings = await redis.get(`settings:${email}`);
-        storageType = 'redis';
-      } catch (redisErr) {
-        console.error("Redis get failed, falling back to local:", redisErr);
+        const { data: record, error: sbError } = await supabase
+          .from('user_settings')
+          .select('settings')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (!sbError) {
+          if (record && record.settings) {
+            settings = record.settings;
+          }
+          storageType = 'supabase';
+        } else {
+          console.error("Supabase get failed, falling back to local:", sbError);
+          settings = await getLocalSettings(email);
+          storageType = 'local_fallback';
+        }
+      } catch (err) {
+        console.error("Supabase query exception, falling back to local:", err);
         settings = await getLocalSettings(email);
         storageType = 'local_fallback';
       }
@@ -98,6 +98,8 @@ export async function GET() {
       }
     }
     delete cleanSettings._sync;
+
+    const isCloud = storageType === 'supabase';
 
     return NextResponse.json({
       ...cleanSettings,
@@ -128,15 +130,28 @@ export async function POST(req) {
     const toSave = { ...data };
     delete toSave._sync;
 
-    const redis = getRedisClient();
+    const supabase = getSupabaseClient();
     let storageType = 'local_file';
 
-    if (redis) {
+    if (supabase) {
       try {
-        await redis.set(`settings:${email}`, toSave);
-        storageType = 'redis';
-      } catch (redisErr) {
-        console.error("Redis set failed, falling back to local:", redisErr);
+        const { error: sbError } = await supabase
+          .from('user_settings')
+          .upsert({
+            email,
+            settings: toSave,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'email' });
+
+        if (!sbError) {
+          storageType = 'supabase';
+        } else {
+          console.error("Supabase upsert failed, falling back to local:", sbError);
+          await setLocalSettings(email, toSave);
+          storageType = 'local_fallback';
+        }
+      } catch (err) {
+        console.error("Supabase upsert exception, falling back to local:", err);
         await setLocalSettings(email, toSave);
         storageType = 'local_fallback';
       }
@@ -145,9 +160,11 @@ export async function POST(req) {
       storageType = LOCAL_KV_PATH.startsWith('/tmp') ? 'ephemeral' : 'local_file';
     }
 
+    const isCloud = storageType === 'supabase';
+
     return NextResponse.json({
       success: true,
-      isCloud: storageType === 'redis',
+      isCloud,
       storageType,
     }, {
       headers: {

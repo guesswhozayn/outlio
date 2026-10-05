@@ -106,7 +106,7 @@ outlio/
 
 ### Hybrid Browser & Cloud Persistence
 - **Client Storage (`localforage`)**: PDF resumes and history logs persist securely in browser IndexedDB.
-- **Settings Persistence**: User signature details, Gemini API keys, and LaTeX templates persist across devices via Upstash Redis (or Vercel KV) in production, and via `local_kv.json` during local development.
+- **Settings Persistence**: User signature details, Gemini API keys, and LaTeX templates persist across devices via Supabase in production, and via `local_kv.json` during local development.
 
 ---
 
@@ -117,7 +117,7 @@ outlio/
 - **Styling**: Vanilla CSS Design System with dark/light themes & glassmorphism
 - **Auth & API**: [NextAuth 4.24](https://next-auth.js.org/) with Google OAuth & Gmail REST API
 - **AI Engine**: [Google Gemini API](https://ai.google.dev/) (BYOK architecture, latest Gemini 3.x models)
-- **Storage / Cloud Sync**: [Upstash Redis](https://upstash.com/) (`@upstash/redis`)
+- **Storage / Cloud Sync**: [Supabase](https://supabase.com/) (`@supabase/supabase-js`)
 - **Icons**: [Lucide React](https://lucide.dev/)
 
 ---
@@ -135,11 +135,30 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 # Optional: Server-side default Gemini API key (users can also provide their own key in Settings via BYOK)
 GEMINI_API_KEY=""
 
-# Optional: Cloud persistence across devices (Vercel / Production)
-# Connect Upstash Redis via Vercel Marketplace or upstash.com:
-UPSTASH_REDIS_REST_URL="https://your-upstash-instance.upstash.io"
-UPSTASH_REDIS_REST_TOKEN="your-upstash-rest-token"
-# (Legacy Vercel KV env vars KV_REST_API_URL and KV_REST_API_TOKEN are also supported)
+# Optional: Cloud persistence across devices via Supabase
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+# Use service role key on server, or anon key
+SUPABASE_SERVICE_ROLE_KEY="your-supabase-service-role-key"
+# (or NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key")
+```
+
+### Supabase Table Setup (SQL)
+
+Run the following SQL in your Supabase project's SQL Editor:
+
+```sql
+create table if not exists user_settings (
+  email text primary key,
+  settings jsonb not null default '{}'::jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Optional: Enable Row Level Security (RLS)
+alter table user_settings enable row level security;
+
+-- Policy allowing access with service role key (or anon key if used)
+create policy "Allow server full access" on user_settings
+  for all using (true) with check (true);
 ```
 
 ---
