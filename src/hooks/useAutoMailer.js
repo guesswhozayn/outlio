@@ -382,10 +382,10 @@ export function useAutoMailer() {
       const resData = await res.json();
       if (resData.isCloud) {
         setSyncStatus({ isCloud: true, storageType: resData.storageType || "supabase" });
-        addLog("Settings saved and synced to cloud (Supabase).", "success");
+        addLog("Settings saved and synced to cloud.", "success");
       } else {
         setSyncStatus({ isCloud: false, storageType: resData.storageType || "local_file" });
-        addLog("Settings saved to this device. (Connect Supabase to sync across all devices).", "info");
+        addLog("Settings saved to this device.", "info");
       }
       setSettingsOpen(false);
       fetchAvailableModels(settings.GEMINI_API_KEY);
