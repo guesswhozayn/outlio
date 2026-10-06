@@ -77,7 +77,6 @@ export async function generateGeminiContent({
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // Normalize model name: fallback to default if missing, non-gemini, or custom placeholder
   let selectedModel = model;
   if (!selectedModel || !selectedModel.startsWith("gemini") || selectedModel === "custom") {
     selectedModel = DEFAULT_MODEL;
@@ -116,7 +115,7 @@ export async function generateGeminiContent({
       }
 
       const result = await generativeModel.generateContent(parts);
-      const response = await result.response;
+      const response = await result.response; 
       const text = response.text();
 
       if (text === undefined || text === null) {
