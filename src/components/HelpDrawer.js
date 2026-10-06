@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowLeftRight } from "lucide-react";
-
 export default function HelpDrawer({ helpOpen, setHelpOpen }) {
   return (
     <>

@@ -55,12 +55,12 @@ outlio/
     │   ├── apple-icon.js      # Dynamic Apple touch icon
     │   └── api/               # Serverless API routes
     │       ├── auth/          # NextAuth OAuth handler ([...nextauth])
-    │       ├── compile-latex/ # LaTeX-to-PDF compilation service
+    │       ├── latex/         # LaTeX-to-PDF compilation service
     │       ├── models/        # Gemini model discovery endpoint
     │       ├── parse/         # Multimodal LLM job extractor
+    │       ├── resume/        # AI resume customization engine
     │       ├── send/          # Gmail REST API email dispatcher
-    │       ├── settings/      # User settings persistence endpoint
-    │       └── tailor-resume/ # AI resume customization engine
+    │       └── settings/      # User settings persistence endpoint
     ├── components/            # Reusable UI components & drawers
     │   ├── EmailPreviewTab.js # Email composer & preview workbench
     │   ├── ExtractedFieldsTab.js # Extracted job attributes editor
@@ -72,7 +72,11 @@ outlio/
     │   ├── ServiceWorkerRegister.js # PWA service worker initializer
     │   └── SettingsDrawer.js  # Signature profile & LaTeX resume settings
     ├── hooks/                 # Custom React hooks
-    │   └── useOutlio.js       # Application workbench state & logic
+    │   ├── useOutlio.js       # Main orchestrator hook
+    │   ├── useSettings.js     # User signature profile & Gemini model discovery
+    │   ├── useJobExtraction.js# Job post parsing & screenshot analysis
+    │   ├── useResumeTailoring.js # LaTeX tailoring & ATS PDF compiling
+    │   └── useEmailOutreach.js# Email preview, Gmail dispatch & history
     └── lib/                   # Utility helpers
         ├── auth.js            # NextAuth configuration with Gmail OAuth scopes
         └── gemini.js          # Google Gemini API client & fallback models

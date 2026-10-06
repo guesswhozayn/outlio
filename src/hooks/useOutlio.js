@@ -1,681 +1,133 @@
-import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
-import localforage from "localforage";
-import { useSession, signIn } from "next-auth/react";
+import { useState, useCallback, useSyncExternalStore } from "react";
+import { useSession } from "next-auth/react";
+import { useSettings } from "./useSettings";
+import { useJobExtraction } from "./useJobExtraction";
+import { useResumeTailoring } from "./useResumeTailoring";
+import { useEmailOutreach } from "./useEmailOutreach";
 
-const emptySubscribe = () => () => { };
-
-const fileToBase64 = async (fileOrBlob) => {
-  if (!fileOrBlob) return null;
-  if (typeof fileOrBlob === "string") {
-    return fileOrBlob.includes(",") ? fileOrBlob.split(",")[1] : fileOrBlob;
-  }
-  if (fileOrBlob instanceof ArrayBuffer) {
-    const uint8 = new Uint8Array(fileOrBlob);
-    let binary = "";
-    const chunkSize = 0x8000;
-    for (let i = 0; i < uint8.length; i += chunkSize) {
-      binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
-  }
-  if (typeof fileOrBlob.arrayBuffer === "function") {
-    const buffer = await fileOrBlob.arrayBuffer();
-    const uint8 = new Uint8Array(buffer);
-    let binary = "";
-    const chunkSize = 0x8000;
-    for (let i = 0; i < uint8.length; i += chunkSize) {
-      binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
-  }
-  return null;
-};
-
-export const INITIAL_SETTINGS = {
-  GEMINI_API_KEY: "",
-  MODEL: "gemini-3.8-flash",
-  USER_NAME: "",
-  USER_PHONE: "",
-  USER_LINKEDIN: "",
-  USER_GITHUB: "",
-  USER_PORTFOLIO: "",
-  LATEX_RESUME: "",
-};
+const emptySubscribe = () => () => {};
 
 export function useOutlio() {
   const { data: session, status } = useSession();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
-  const [postText, setPostText] = useState("");
-  const [fields, setFields] = useState({
-    email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [],
-  });
-
-  const [manualSubject, setManualSubject] = useState("");
-  const [manualEmailBody, setManualEmailBody] = useState("");
-  const [isManuallyEdited, setIsManuallyEdited] = useState(false);
-
-  const [settings, setSettings] = useState(INITIAL_SETTINGS);
 
   const [activeTab, setActiveTab] = useState("preview");
   const [viewMode, setViewMode] = useState("input");
-  const [history, setHistory] = useState([]);
-  const [isFollowUp, setIsFollowUp] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const hasGmailConfig = Boolean(session?.user?.email);
-  const [resumeExists, setResumeExists] = useState(false);
-  const [resumeFile, setResumeFile] = useState(null);
-  const [isParsing, setIsParsing] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isTailoring, setIsTailoring] = useState(false);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [availableModels, setAvailableModels] = useState([]);
-  const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [logs, setLogs] = useState([]);
-
-  const [syncStatus, setSyncStatus] = useState({ isCloud: false, storageType: "local_file" });
-
-  const settingsRef = useRef(settings);
-  useEffect(() => {
-    settingsRef.current = settings;
-  }, [settings]);
-  const hasInitializedUserRef = useRef(null);
-
-  const fileInputRef = useRef(null);
-  const imageInputRef = useRef(null);
-  const [screenshotData, setScreenshotData] = useState(null);
-  const [screenshotName, setScreenshotName] = useState("");
 
   const addLog = useCallback((message, type = "info") => {
     const timestamp = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { timestamp, message, type }]);
+    setLogs((prev) => [...prev, { timestamp, message, type }]);
   }, []);
 
-  const fetchAvailableModels = useCallback(async (keyOverride) => {
-    setIsFetchingModels(true);
-    try {
-      const apiKey = keyOverride !== undefined ? keyOverride : settingsRef.current.GEMINI_API_KEY;
-      const res = await fetch("/api/models", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey }),
-      });
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.models) && data.models.length > 0) {
-        setAvailableModels(data.models);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsFetchingModels(false);
-    }
-  }, []);
-
-  const handleSetSettingsOpen = useCallback((open) => {
-    if (open && availableModels.length === 0) {
-      fetchAvailableModels();
-    }
-    setSettingsOpen(open);
-  }, [availableModels.length, fetchAvailableModels]);
-
-  const handleParsePost = useCallback(async (overrideText, overrideModel) => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
-    let textToParse = typeof overrideText === "string" ? overrideText : postText;
-    if (!textToParse.trim() && !screenshotData) return;
-    setIsParsing(true);
-
-    addLog("Sending to AI extractor...", "info");
-
-    const base64Image = screenshotData ? screenshotData.split(",")[1] : null;
-    const mimeType = screenshotData ? screenshotData.split(";")[0].split(":")[1] : null;
-
-    try {
-      const res = await fetch("/api/parse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postText: textToParse,
-          image: base64Image,
-          mimeType: mimeType,
-          model: overrideModel || settingsRef.current.MODEL || "gemini-3.8-flash",
-          apiKey: settingsRef.current.GEMINI_API_KEY,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to parse post");
-
-      const newFields = {
-        email: data.email || "",
-        company: data.company || "",
-        jobTitle: data.jobTitle || "",
-        recipientName: data.recipientName || "Hiring Team",
-        skills: data.skills || "",
-        comprehensiveSkills: data.comprehensiveSkills || "",
-        keyRequirements: Array.isArray(data.keyRequirements) ? data.keyRequirements : []
-      };
-
-      setFields(newFields);
-      setIsManuallyEdited(false);
-      setIsFollowUp(false);
-      setActiveTab("preview");
-      setViewMode("workspace");
-      addLog("Job details extracted successfully!", "success");
-
-    } catch (error) {
-      addLog(`Error parsing post: ${error.message}`, "error");
-      if (error.message?.includes("Gemini API key")) {
-        setSettingsOpen(true);
-      }
-    } finally {
-      setIsParsing(false);
-    }
-  }, [postText, screenshotData, addLog, status]);
-
-
-
-  const loadSettings = useCallback(async () => {
-    try {
-      const email = session?.user?.email;
-      let localSettings = {};
-      if (email) {
-        try {
-          localSettings = (await localforage.getItem(`outlio_settings_${email}`)) || {};
-        } catch (err) {
-          console.warn("Browser storage access denied:", err);
-        }
-      }
-
-      let pendingSettings = null;
-      try {
-        const pendingRaw = typeof window !== "undefined" ? localStorage.getItem("outlio_pending_settings") : null;
-        if (pendingRaw) {
-          pendingSettings = JSON.parse(pendingRaw);
-          localStorage.removeItem("outlio_pending_settings");
-        }
-      } catch (err) {
-        console.warn("Could not read pending settings:", err);
-      }
-
-      const res = await fetch("/api/settings", { cache: "no-store" });
-      const parsed = await res.json();
-
-      if (parsed && parsed._sync) {
-        setSyncStatus(parsed._sync);
-        delete parsed._sync;
-      }
-
-      let finalSettings = { ...localSettings };
-
-      if (parsed && typeof parsed === "object" && !parsed.error && Object.keys(parsed).length > 0) {
-        finalSettings = { ...finalSettings, ...parsed };
-      }
-
-      if (pendingSettings && Object.keys(pendingSettings).length > 0) {
-        finalSettings = { ...finalSettings, ...pendingSettings };
-        fetch("/api/settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(finalSettings),
-        }).catch(err => console.error("Auto-sync pending settings failed:", err));
-        addLog("Pending configuration settings applied to your account.", "success");
-      }
-
-      if (email && Object.keys(finalSettings).length > 0) {
-        try {
-          await localforage.setItem(`outlio_settings_${email}`, finalSettings);
-        } catch (err) {
-          console.warn("Browser storage access denied:", err);
-        }
-      }
-
-      let savedModel = finalSettings.MODEL || finalSettings.GEMINI_MODEL || "gemini-3.8-flash";
-      if (typeof savedModel !== "string" || !savedModel.startsWith("gemini") || savedModel.includes("gemini-2.0")) {
-        savedModel = "gemini-3.8-flash";
-      }
-      finalSettings.MODEL = savedModel;
-      if (!finalSettings.USER_NAME && session?.user?.name) {
-        finalSettings.USER_NAME = session.user.name;
-      }
-
-      setSettings({ ...INITIAL_SETTINGS, ...finalSettings });
-      fetchAvailableModels(finalSettings.GEMINI_API_KEY);
-
-      try {
-        const storedHistory = await localforage.getItem("outlio_history");
-        if (storedHistory) setHistory(storedHistory);
-      } catch (err) {
-        console.warn("Browser storage access denied for history:", err);
-      }
-
-      try {
-        const tailoredResume = await localforage.getItem("outlio_tailored_resume");
-        const baseResume = await localforage.getItem("outlio_base_resume");
-
-        const isValidResume = (item) => Boolean(item && (item instanceof Blob || item instanceof ArrayBuffer || (typeof item === 'object' && (item.size > 0 || item.byteLength > 0))));
-
-        if (isValidResume(tailoredResume)) {
-          setResumeFile(tailoredResume);
-          setResumeExists(true);
-          addLog("Tailored resume loaded from browser storage.", "success");
-        } else if (isValidResume(baseResume)) {
-          setResumeFile(baseResume);
-          setResumeExists(true);
-          addLog("Default resume loaded from browser storage.", "success");
-        }
-      } catch (err) {
-        console.warn("Browser storage access denied for resume:", err);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [session, fetchAvailableModels, addLog]);
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      const userKey = session?.user?.email || "authenticated_user";
-      if (hasInitializedUserRef.current !== userKey) {
-        hasInitializedUserRef.current = userKey;
-        loadSettings();
-        addLog("Dashboard initialized. Ready to process jobs.", "info");
-      }
-    } else if (status === "unauthenticated") {
-      hasInitializedUserRef.current = null;
-    }
-  }, [status, session?.user?.email, loadSettings, addLog]);
-
-  const compiled = useMemo(() => {
-    const pTitle = fields.jobTitle || "[Position Title]";
-    const cName = fields.company ? fields.company : "your company";
-
-    const uName = settings.USER_NAME || "[Your Name]";
-    const uPhone = settings.USER_PHONE || "";
-    const uLink = settings.USER_LINKEDIN || "";
-
-    let salutation = "Hi Hiring Team,";
-    if (fields.recipientName && fields.recipientName.toLowerCase() !== "hiring team") {
-      salutation = `Hi ${fields.recipientName},`;
-    }
-
-    const contactParts = [];
-    if (uPhone && uPhone !== "[Phone Number]") contactParts.push(uPhone);
-    if (uLink && uLink !== "[LinkedIn Profile]") contactParts.push(uLink);
-    if (settings.USER_GITHUB) contactParts.push(settings.USER_GITHUB);
-    if (settings.USER_PORTFOLIO) contactParts.push(settings.USER_PORTFOLIO);
-    const contactBlock = contactParts.length > 0 ? `\n${contactParts.join(" | ")}` : "";
-
-    let body = "";
-    let sub = "";
-
-    if (isFollowUp) {
-      body = `${salutation}\n\nFollowing up on my application for the ${pTitle} role at ${cName}.\n\nMy resume is re-attached for your convenience. Please let me know if you'd be open to a brief conversation.\n\nBest,\n\n${uName}${contactBlock}`;
-      sub = `Following up: ${pTitle} – ${uName}`;
-    } else {
-      body = `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and would love to apply.\n\nMy resume is attached for your review. Please let me know if you'd be open to a quick chat.\n\nBest,\n\n${uName}${contactBlock}`;
-      sub = `Application for ${pTitle} – ${uName}`;
-    }
-
-    return { subject: sub, body };
-  }, [fields, settings, isFollowUp]);
-
-  const subject = isManuallyEdited ? manualSubject : compiled.subject;
-  const emailBody = isManuallyEdited ? manualEmailBody : compiled.body;
-
-  const setSubject = (val) => {
-    setManualSubject(val);
-    setIsManuallyEdited(true);
-  };
-  const setEmailBody = (val) => {
-    setManualEmailBody(val);
-    setIsManuallyEdited(true);
-  };
-  const handleSetIsManuallyEdited = (val) => {
-    setIsManuallyEdited(val);
-    if (!val) {
-      setManualSubject("");
-      setManualEmailBody("");
-    }
-  };
-
-  const handleSaveSettings = async (e) => {
-    if (e && typeof e.preventDefault === "function") {
-      e.preventDefault();
-    }
-    if (status === "unauthenticated") {
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("outlio_pending_settings", JSON.stringify(settings));
-        }
-        addLog("Settings cached locally. Redirecting to Google sign-in...", "info");
-      } catch (err) {
-        console.warn("Could not cache pending settings:", err);
-      }
-      signIn("google");
-      return;
-    }
-    setIsSavingSettings(true);
-    try {
-      const email = session?.user?.email;
-      if (email) {
-        try {
-          await localforage.setItem(`outlio_settings_${email}`, settings);
-        } catch (err) {
-          console.warn("Browser storage access denied:", err);
-        }
-      }
-
-      const res = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to save settings");
-      }
-
-      const resData = await res.json();
-      if (resData.isCloud) {
-        setSyncStatus({ isCloud: true, storageType: resData.storageType || "supabase" });
-        addLog("Settings saved and synced to cloud.", "success");
-      } else {
-        setSyncStatus({ isCloud: false, storageType: resData.storageType || "local_file" });
-        addLog("Settings saved to this device.", "info");
-      }
-      setSettingsOpen(false);
-      fetchAvailableModels(settings.GEMINI_API_KEY);
-    } catch (e) {
-      addLog(`Error saving settings: ${e.message}`, "error");
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const handleUploadClick = () => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
-    fileInputRef.current.click();
-  };
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    e.target.value = "";
-    if (file.type !== "application/pdf") {
-      addLog("Only PDF files are supported.", "error");
-      return;
-    }
-    setIsUploading(true);
-    try {
-      await localforage.setItem("outlio_base_resume", file);
-      setResumeFile(file);
-      setResumeExists(true);
-      addLog("Resume saved securely in browser.", "success");
-    } catch {
-      addLog("Error saving resume.", "error");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleImageUploadClick = () => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
-    imageInputRef.current.click();
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    e.target.value = "";
-    setScreenshotName(file.name);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setScreenshotData(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleTailorResume = async () => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
-    if (!settings.LATEX_RESUME) {
-      addLog("Please provide a base LaTeX resume in settings first.", "error");
-      return;
-    }
-
-    setIsTailoring(true);
-    addLog("Tailoring resume with AI...", "info");
-
-    try {
-      let tailoredLatexTemplate = settings.LATEX_RESUME;
-
-      const replaceLatexValue = (template, placeholder, rawValue) => {
-        if (!rawValue) return template.replaceAll(placeholder, "");
-        return template.replaceAll(placeholder, (match, offset, fullStr) => {
-          const before = fullStr.slice(Math.max(0, offset - 40), offset);
-          const isInsideHrefUrl = /\\href\{[^{}]*$/.test(before);
-          const isInsideUrl = /\\url\{[^{}]*$/.test(before);
-          if (isInsideHrefUrl || isInsideUrl) {
-            return rawValue;
-          }
-          return String(rawValue)
-            .replace(/\\/g, "\\textbackslash{}")
-            .replace(/([&%$#_{}])/g, "\\$1")
-            .replace(/~/g, "\\textasciitilde{}")
-            .replace(/\^/g, "\\textasciicircum{}");
-        });
-      };
-
-      const replacements = [
-        ["{{USER_NAME}}", settings.USER_NAME || ""],
-        ["{{USER_PHONE}}", settings.USER_PHONE || ""],
-        ["{{USER_EMAIL}}", session?.user?.email || ""],
-        ["{{USER_LINKEDIN}}", settings.USER_LINKEDIN || ""],
-        ["{{USER_GITHUB}}", settings.USER_GITHUB || ""],
-        ["{{USER_PORTFOLIO}}", settings.USER_PORTFOLIO || ""]
-      ];
-
-      replacements.forEach(([key, value]) => {
-        tailoredLatexTemplate = replaceLatexValue(tailoredLatexTemplate, key, value);
-      });
-
-      const tailorRes = await fetch("/api/tailor-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          latexCode: tailoredLatexTemplate,
-          jobDescription: postText || fields.comprehensiveSkills || fields.skills || "Software Engineering Role",
-          model: settings.MODEL || "gemini-3.8-flash",
-          apiKey: settings.GEMINI_API_KEY,
-        })
-      });
-      const tailorData = await tailorRes.json();
-      if (!tailorRes.ok) throw new Error(tailorData.error || "Failed to tailor resume");
-
-      addLog("Compiling LaTeX to PDF...", "info");
-
-      const compileRes = await fetch("/api/compile-latex", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ latexCode: tailorData.latex, userName: settings.USER_NAME })
-      });
-
-      if (!compileRes.ok) {
-        const errorData = await compileRes.json();
-        throw new Error(errorData.error || "Failed to compile PDF");
-      }
-
-      const pdfBlob = await compileRes.blob();
-      const defaultFileName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf";
-      pdfBlob.name = defaultFileName;
-
-      await localforage.setItem("outlio_tailored_resume", pdfBlob);
-      setResumeFile(pdfBlob);
-      setResumeExists(true);
-      addLog("Tailored resume generated and attached successfully!", "success");
-
-    } catch (error) {
-      addLog(`Error tailoring resume: ${error.message}`, "error");
-      if (error.message?.includes("Gemini API key")) {
-        setSettingsOpen(true);
-      }
-    } finally {
-      setIsTailoring(false);
-    }
-  };
-
-  const handleSendEmail = async () => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
-    if (!fields.email || !resumeExists || !hasGmailConfig) return;
-    setIsSending(true);
-    addLog(`Sending application to ${fields.email}...`, "info");
-
-    try {
-      let resumeBase64 = null;
-      let resumeFileName = null;
-
-      if (resumeFile) {
-        resumeBase64 = await fileToBase64(resumeFile);
-        const defaultFileName = (settings.USER_NAME || "user")
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-zA-Z0-9_-]/g, "_") + "_resume.pdf";
-        const rawName = resumeFile.name || defaultFileName;
-        resumeFileName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
-        if (!resumeFileName.toLowerCase().endsWith(".pdf")) {
-          resumeFileName += ".pdf";
-        }
-      }
-
-      if (!resumeBase64 && resumeExists) {
-        const stored = (await localforage.getItem("outlio_tailored_resume")) ||
-          (await localforage.getItem("outlio_base_resume"));
-        if (stored) {
-          resumeBase64 = await fileToBase64(stored);
-          const defaultFileName = (settings.USER_NAME || "user")
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-zA-Z0-9_-]/g, "_") + "_resume.pdf";
-          const rawName = stored.name || defaultFileName;
-          resumeFileName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
-          if (!resumeFileName.toLowerCase().endsWith(".pdf")) {
-            resumeFileName += ".pdf";
-          }
-        }
-      }
-
-      if (resumeExists && !resumeBase64) {
-        throw new Error("Resume attachment is missing or unreadable. Please re-upload your resume.");
-      }
-
-      const payload = {
-        toEmail: fields.email,
-        subject,
-        emailBody,
-        userName: settings.USER_NAME || "",
-        resumeBase64,
-        resumeFileName,
-      };
-
-      const res = await fetch("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        addLog(`Email sent to ${fields.email}!`, "success");
-        const newEntry = {
-          id: Date.now().toString(),
-          date: new Date().toISOString(),
-          company: fields.company || "Unknown Company",
-          jobTitle: fields.jobTitle || "Unknown Role",
-          email: fields.email,
-          recipientName: fields.recipientName,
-          skills: fields.skills || "",
-          keyRequirements: fields.keyRequirements || [],
-          comprehensiveSkills: fields.comprehensiveSkills || "",
-          userPhone: settings.USER_PHONE || "",
-          userLinkedin: settings.USER_LINKEDIN || "",
-          type: isFollowUp ? "Follow Up" : "Standard Application"
-        };
-        const updatedHistory = [newEntry, ...history];
-        setHistory(updatedHistory);
-        localforage.setItem("outlio_history", updatedHistory).catch(console.warn);
-
-        localforage.removeItem("outlio_tailored_resume").catch(console.warn);
-        const baseResume = await localforage.getItem("outlio_base_resume");
-        if (baseResume) {
-          setResumeFile(baseResume);
-          setResumeExists(true);
-        } else {
-          setResumeFile(null);
-          setResumeExists(false);
-        }
-
-        setPostText("");
-        setScreenshotData(null);
-        setScreenshotName("");
-        setFields({ email: "", company: "", jobTitle: "", recipientName: "Hiring Team", skills: "", comprehensiveSkills: "", keyRequirements: [] });
-        addLog("Form and attachments cleared for next application.", "info");
-      } else {
-        addLog(`Send failed: ${data.error}`, "error");
-      }
-    } catch (error) {
-      addLog(`Error: ${error.message}`, "error");
-    } finally {
-      setIsSending(false);
-    }
-  };
+  const settingsState = useSettings({ session, status, addLog });
+
+  const extractionState = useJobExtraction({
+    status,
+    settingsRef: settingsState.settingsRef,
+    setSettingsOpen: settingsState.setSettingsOpen,
+    setActiveTab,
+    setViewMode,
+    setIsManuallyEdited: (val) => outreachState.setIsManuallyEdited(val),
+    setIsFollowUp: (val) => outreachState.setIsFollowUp(val),
+    addLog,
+  });
+
+  const resumeState = useResumeTailoring({
+    session,
+    status,
+    settings: settingsState.settings,
+    fields: extractionState.fields,
+    postText: extractionState.postText,
+    setSettingsOpen: settingsState.setSettingsOpen,
+    addLog,
+  });
+
+  const outreachState = useEmailOutreach({
+    session,
+    status,
+    settings: settingsState.settings,
+    fields: extractionState.fields,
+    clearFields: extractionState.clearFields,
+    resumeExists: resumeState.resumeExists,
+    resumeFile: resumeState.resumeFile,
+    resetTailoredToDefault: resumeState.resetTailoredToDefault,
+    addLog,
+  });
 
   return {
-    session, status,
+    session,
+    status,
     mounted,
-    postText, setPostText,
-    fields, setFields,
-    subject, setSubject,
-    emailBody, setEmailBody,
-    isManuallyEdited, setIsManuallyEdited: handleSetIsManuallyEdited,
-    settings, setSettings,
-    activeTab, setActiveTab,
-    viewMode, setViewMode,
-    history, setHistory,
-    isFollowUp, setIsFollowUp,
-    settingsOpen, setSettingsOpen: handleSetSettingsOpen,
-    helpOpen, setHelpOpen,
-    hasGmailConfig,
-    resumeExists, setResumeExists,
-    resumeFile, setResumeFile,
-    isParsing, setIsParsing,
-    isSending, setIsSending,
-    isUploading, setIsUploading,
-    isTailoring, setIsTailoring,
-    isSavingSettings, setIsSavingSettings,
-    availableModels, setAvailableModels,
-    isFetchingModels, setIsFetchingModels,
-    logs, setLogs,
-    fileInputRef, imageInputRef,
-    screenshotData, setScreenshotData,
-    screenshotName, setScreenshotName,
-    handleImageUploadClick, handleImageChange, handleParsePost,
-    handleUploadClick, handleFileChange, handleTailorResume, handleSendEmail,
-    handleSaveSettings,
-    syncStatus,
+
+    // Navigation & UI
+    activeTab,
+    setActiveTab,
+    viewMode,
+    setViewMode,
+    helpOpen,
+    setHelpOpen,
+    logs,
+    setLogs,
+
+    // Settings
+    settings: settingsState.settings,
+    setSettings: settingsState.setSettings,
+    settingsOpen: settingsState.settingsOpen,
+    setSettingsOpen: settingsState.setSettingsOpen,
+    isSavingSettings: settingsState.isSavingSettings,
+    handleSaveSettings: settingsState.handleSaveSettings,
+    availableModels: settingsState.availableModels,
+    setAvailableModels: settingsState.setAvailableModels,
+    isFetchingModels: settingsState.isFetchingModels,
+    fetchAvailableModels: settingsState.fetchAvailableModels,
+    syncStatus: settingsState.syncStatus,
+
+    // Job extraction
+    postText: extractionState.postText,
+    setPostText: extractionState.setPostText,
+    fields: extractionState.fields,
+    setFields: extractionState.setFields,
+    isParsing: extractionState.isParsing,
+    setIsParsing: extractionState.setIsParsing,
+    screenshotData: extractionState.screenshotData,
+    setScreenshotData: extractionState.setScreenshotData,
+    screenshotName: extractionState.screenshotName,
+    setScreenshotName: extractionState.setScreenshotName,
+    imageInputRef: extractionState.imageInputRef,
+    handleImageUploadClick: extractionState.handleImageUploadClick,
+    handleImageChange: extractionState.handleImageChange,
+    handleParsePost: extractionState.handleParsePost,
+
+    // Resume tailoring
+    resumeExists: resumeState.resumeExists,
+    setResumeExists: resumeState.setResumeExists,
+    resumeFile: resumeState.resumeFile,
+    setResumeFile: resumeState.setResumeFile,
+    isUploading: resumeState.isUploading,
+    setIsUploading: resumeState.setIsUploading,
+    isTailoring: resumeState.isTailoring,
+    setIsTailoring: resumeState.setIsTailoring,
+    fileInputRef: resumeState.fileInputRef,
+    handleUploadClick: resumeState.handleUploadClick,
+    handleFileChange: resumeState.handleFileChange,
+    handleTailorResume: resumeState.handleTailorResume,
+
+    // Email outreach
+    subject: outreachState.subject,
+    setSubject: outreachState.setSubject,
+    emailBody: outreachState.emailBody,
+    setEmailBody: outreachState.setEmailBody,
+    isManuallyEdited: outreachState.isManuallyEdited,
+    setIsManuallyEdited: outreachState.setIsManuallyEdited,
+    history: outreachState.history,
+    setHistory: outreachState.setHistory,
+    isFollowUp: outreachState.isFollowUp,
+    setIsFollowUp: outreachState.setIsFollowUp,
+    hasGmailConfig: outreachState.hasGmailConfig,
+    isSending: outreachState.isSending,
+    setIsSending: outreachState.setIsSending,
+    handleSendEmail: outreachState.handleSendEmail,
   };
 }

@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { FALLBACK_MODELS, DEFAULT_MODEL } from "@/lib/gemini";
-import { Download, Upload, Cloud, HardDrive } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 
 export default function SettingsDrawer({
   settingsOpen,
