@@ -43,17 +43,15 @@ export async function fetchGeminiModels(customKey) {
       return BEST_MODELS;
     }
 
-    // Extract available model IDs returned by Google API
     const availableIds = new Set(
       data.models.map((m) => (m.name ? m.name.replace(/^models\//, "") : ""))
     );
 
-    // Filter to only include the best frontier models supported on this account
     const matchedModels = BEST_MODELS.filter((bm) => availableIds.has(bm.name));
 
     return matchedModels.length > 0 ? matchedModels : BEST_MODELS;
   } catch (error) {
-    console.error("Failed to fetch Gemini models:", error);
+    console.error("Failed to fetch Gemini models:", error); 
     return BEST_MODELS;
   }
 }
@@ -63,7 +61,7 @@ export async function generateGeminiContent({
   model = DEFAULT_MODEL,
   prompt,
   systemInstruction,
-  image,
+  image, 
   mimeType,
   responseJson = false,
   maxRetries = 2,
@@ -86,10 +84,11 @@ export async function generateGeminiContent({
   let lastError = null;
 
   while (attempt <= maxRetries) {
-    const currentModelName =
+    const currentModelName = 
       attempt === maxRetries && selectedModel.includes("3.") && selectedModel !== "gemini-3.1-flash-lite"
         ? "gemini-3.1-flash-lite"
         : selectedModel;
+    
 
     try {
       const generativeModel = genAI.getGenerativeModel({
