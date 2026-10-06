@@ -46,7 +46,7 @@ export default function EmailPreviewTab({
           type="text"
           placeholder="Email subject"
           value={subject}
-          onChange={(e) => { setSubject(e.target.value); setIsManuallyEdited(true); }}
+          onChange={(e) => setSubject(e.target.value)}
         />
       </div>
 
@@ -58,7 +58,7 @@ export default function EmailPreviewTab({
           className="email-body-input"
           style={{ flexGrow: 1, minHeight: "300px", fontFamily: "inherit" }}
           value={emailBody}
-          onChange={(e) => { setEmailBody(e.target.value); setIsManuallyEdited(true); }}
+          onChange={(e) => setEmailBody(e.target.value)}
         />
       </div>
 

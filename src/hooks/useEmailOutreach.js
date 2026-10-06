@@ -31,9 +31,8 @@ export function useEmailOutreach({
 }) {
   const [history, setHistory] = useState([]);
   const [isFollowUp, setIsFollowUp] = useState(false);
-  const [manualSubject, setManualSubject] = useState("");
-  const [manualEmailBody, setManualEmailBody] = useState("");
-  const [isManuallyEdited, setIsManuallyEdited] = useState(false);
+  const [manualSubject, setManualSubject] = useState(null);
+  const [manualEmailBody, setManualEmailBody] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
   const hasGmailConfig = Boolean(session?.user?.email);
@@ -76,24 +75,22 @@ export function useEmailOutreach({
     };
   }, [fields, settings, isFollowUp]);
 
-  const subject = isManuallyEdited ? manualSubject : compiled.subject;
-  const emailBody = isManuallyEdited ? manualEmailBody : compiled.body;
+  const subject = manualSubject !== null ? manualSubject : compiled.subject;
+  const emailBody = manualEmailBody !== null ? manualEmailBody : compiled.body;
+  const isManuallyEdited = manualSubject !== null || manualEmailBody !== null;
 
   const setSubject = (val) => {
     setManualSubject(val);
-    setIsManuallyEdited(true);
   };
 
   const setEmailBody = (val) => {
     setManualEmailBody(val);
-    setIsManuallyEdited(true);
   };
 
   const handleSetIsManuallyEdited = (val) => {
-    setIsManuallyEdited(val);
     if (!val) {
-      setManualSubject("");
-      setManualEmailBody("");
+      setManualSubject(null);
+      setManualEmailBody(null);
     }
   };
 
