@@ -52,11 +52,11 @@ export default function JobInput({
         {logs.length > 0 && logs[logs.length - 1].message}
       </div>
 
-      <div className="flex-row" style={{ marginBottom: "1rem", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+      <div className="flex-row" style={{ marginBottom: "1rem", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
         <button
           type="button"
           className="btn btn-secondary"
-          style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }}
+          style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem", minHeight: "36px" }}
           onClick={async () => {
             try {
               if (navigator.clipboard && navigator.clipboard.readText) {
@@ -74,24 +74,32 @@ export default function JobInput({
           Paste
         </button>
 
-        <button className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem" }} onClick={handleImageUploadClick}>
-          Upload
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem", minHeight: "36px" }}
+          onClick={handleImageUploadClick}
+        >
+          Upload Screenshot
         </button>
         <input type="file" ref={imageInputRef} style={{ display: "none" }} accept="image/*" onChange={handleImageChange} />
-        {screenshotName && <span style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>{screenshotName}</span>}
         {screenshotName && (
-          <button
-            style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
-            onClick={() => {
-              setScreenshotData(null);
-              setScreenshotName("");
-              if (imageInputRef.current) {
-                imageInputRef.current.value = "";
-              }
-            }}
-          >
-            ✕
-          </button>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", background: "var(--bg-secondary)", padding: "0.25rem 0.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--glass-border)", maxWidth: "100%", overflow: "hidden" }}>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{screenshotName}</span>
+            <button
+              style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.85rem", padding: "0 0.2rem" }}
+              onClick={() => {
+                setScreenshotData(null);
+                setScreenshotName("");
+                if (imageInputRef.current) {
+                  imageInputRef.current.value = "";
+                }
+              }}
+              aria-label="Remove screenshot"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
 

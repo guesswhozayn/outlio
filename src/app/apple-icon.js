@@ -20,16 +20,18 @@ export default function Icon() {
         <svg
           width="130"
           height="130"
-          viewBox="0 0 56 56"
+          viewBox="0 0 100 100"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Primary Fold (Top Wing) */}
-          <path d="M14 28 L40 16 L26 32 Z" fill="#FFFFFF" />
-          {/* Secondary Dual Fold (Bottom Wing) */}
-          <path d="M40 16 L30 42 L26 32 Z" fill="#FFFFFF" fillOpacity="0.75" />
-          {/* Origami Shadow Crease */}
-          <path d="M14 28 L26 32 L21 35 Z" fill="#000000" fillOpacity="0.22" />
+          {/* Scaled down to ~78% and visually centered with generous padding */}
+          <g transform="translate(50, 50) scale(0.78) translate(-54, -49)">
+            <rect x="22" y="32" width="10" height="36" rx="5" fill="#3f3f46" transform="rotate(25 27 50)" />
+            <rect x="45" y="24" width="10" height="52" rx="5" fill="#a1a1aa" transform="rotate(25 50 50)" />
+            <rect x="68" y="16" width="10" height="68" rx="5" fill="#ffffff" transform="rotate(25 73 50)" />
+            {/* Target ping indicator */}
+            <circle cx="73" cy="20" r="3" fill="#000000" />
+          </g>
         </svg>
       </div>
     ),

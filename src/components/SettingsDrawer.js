@@ -48,8 +48,6 @@ export default function SettingsDrawer({
     "gemini-3.5-flash": 2,
     "gemini-3.1-pro": 3,
     "gemini-3.1-flash-lite": 4,
-    "gemini-2.5-pro": 5,
-    "gemini-2.5-flash": 6,
   };
 
   const modelOptions = Array.from(allModelsMap.values());
@@ -192,7 +190,7 @@ export default function SettingsDrawer({
             {isCustomMode && (
               <input
                 type="text"
-                placeholder="e.g. gemini-2.5-pro"
+                placeholder="e.g. gemini-3.8-flash"
                 value={settings?.MODEL || ""}
                 onChange={(e) => setSettings({ ...settings, MODEL: e.target.value })}
                 style={{ marginTop: "0.5rem" }}
@@ -279,23 +277,24 @@ export default function SettingsDrawer({
             </small>
           </div>
 
-          <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.5rem" }}>
+          <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
             <button
               type="button"
               className="btn btn-secondary"
               onClick={handleExport}
               style={{
-                flex: 1,
+                flex: "1 1 140px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "0.35rem",
                 fontSize: "0.825rem",
                 padding: "0.55rem 0.75rem",
+                minHeight: "40px",
               }}
               title="Download your settings as a JSON file to transfer between devices"
             >
-              <Download size={14} />
+              <Download size={15} />
               <span>Export JSON</span>
             </button>
             <button
@@ -303,17 +302,18 @@ export default function SettingsDrawer({
               className="btn btn-secondary"
               onClick={() => importFileRef.current?.click()}
               style={{
-                flex: 1,
+                flex: "1 1 140px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "0.35rem",
                 fontSize: "0.825rem",
                 padding: "0.55rem 0.75rem",
+                minHeight: "40px",
               }}
               title="Import settings from a previously saved JSON file"
             >
-              <Upload size={14} />
+              <Upload size={15} />
               <span>Import JSON</span>
             </button>
             <input
@@ -325,7 +325,7 @@ export default function SettingsDrawer({
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }} disabled={isSavingSettings}>
+          <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem", minHeight: "44px" }} disabled={isSavingSettings}>
             {isSavingSettings ? "Saving..." : "Save Settings"}
           </button>
         </form>

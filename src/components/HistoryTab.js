@@ -5,19 +5,32 @@ export default function HistoryTab({ history, setFields, setIsFollowUp, setActiv
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", textAlign: "center", marginTop: "2rem" }}>No applications sent yet.</p>
       ) : (
         history.map((item) => (
-          <div key={item.id} style={{ padding: "1rem", border: "1px solid var(--glass-border)", borderRadius: "var(--radius-md)", background: "var(--bg-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-            <div style={{ overflow: "hidden", flex: "1 1 200px", minWidth: 0 }}>
+          <div
+            key={item.id}
+            style={{
+              padding: "0.85rem 1rem",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "var(--radius-md)",
+              background: "var(--bg-secondary)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ overflow: "hidden", flex: "1 1 180px", minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
-                <span style={{ fontWeight: 500, color: "var(--text-primary)" }}>{item.company}</span>
+                <span style={{ fontWeight: 500, color: "var(--text-primary)", fontSize: "0.9rem" }}>{item.company}</span>
                 <span className="badge" style={{ fontSize: "0.65rem", padding: "0.15rem 0.4rem", background: "var(--bg-primary)", borderColor: "var(--glass-border)", whiteSpace: "nowrap" }}>{item.type}</span>
               </div>
-              <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "0.4rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.jobTitle}</div>
-              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.15rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.email}</div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{new Date(item.date).toLocaleDateString()}</div>
+              <div style={{ fontSize: "0.825rem", color: "var(--text-secondary)", marginBottom: "0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.jobTitle}</div>
+              <div style={{ fontSize: "0.775rem", color: "var(--text-muted)", marginBottom: "0.25rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.email}</div>
+              <div style={{ fontSize: "0.725rem", color: "var(--text-muted)" }}>{new Date(item.date).toLocaleDateString()}</div>
             </div>
             <button 
               className="btn btn-secondary" 
-              style={{ fontSize: "0.75rem", padding: "0.4rem 0.75rem", whiteSpace: "nowrap", flexShrink: 0 }}
+              style={{ fontSize: "0.8rem", padding: "0.4rem 0.85rem", minHeight: "36px", whiteSpace: "nowrap", flexShrink: 0 }}
               onClick={() => {
                 setFields(prev => ({
                   ...prev,
