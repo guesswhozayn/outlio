@@ -42,7 +42,7 @@ export const INITIAL_SETTINGS = {
   LATEX_RESUME: "",
 };
 
-export function useAutoMailer() {
+export function useOutlio() {
   const { data: session, status } = useSession();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [postText, setPostText] = useState("");
@@ -184,7 +184,7 @@ export function useAutoMailer() {
       let localSettings = {};
       if (email) {
         try {
-          localSettings = (await localforage.getItem(`outlio_settings_${email}`)) || (await localforage.getItem(`automailer_settings_${email}`)) || {};
+          localSettings = (await localforage.getItem(`outlio_settings_${email}`)) || {};
         } catch (err) {
           console.warn("Browser storage access denied:", err);
         }
@@ -246,7 +246,7 @@ export function useAutoMailer() {
       fetchAvailableModels(finalSettings.GEMINI_API_KEY);
 
       try {
-        const storedHistory = (await localforage.getItem("outlio_history")) || (await localforage.getItem("automailer_history"));
+        const storedHistory = await localforage.getItem("outlio_history");
         if (storedHistory) setHistory(storedHistory);
       } catch (err) {
         console.warn("Browser storage access denied for history:", err);
@@ -254,7 +254,7 @@ export function useAutoMailer() {
 
       try {
         const tailoredResume = await localforage.getItem("outlio_tailored_resume");
-        const baseResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));
+        const baseResume = await localforage.getItem("outlio_base_resume");
 
         const isValidResume = (item) => Boolean(item && (item instanceof Blob || item instanceof ArrayBuffer || (typeof item === 'object' && (item.size > 0 || item.byteLength > 0))));
 
@@ -565,8 +565,7 @@ export function useAutoMailer() {
 
       if (!resumeBase64 && resumeExists) {
         const stored = (await localforage.getItem("outlio_tailored_resume")) ||
-          (await localforage.getItem("outlio_base_resume")) ||
-          (await localforage.getItem("automailer_base_resume"));
+          (await localforage.getItem("outlio_base_resume"));
         if (stored) {
           resumeBase64 = await fileToBase64(stored);
           const defaultFileName = (settings.USER_NAME || "user")
@@ -621,8 +620,7 @@ export function useAutoMailer() {
         localforage.setItem("outlio_history", updatedHistory).catch(console.warn);
 
         localforage.removeItem("outlio_tailored_resume").catch(console.warn);
-        localforage.removeItem("automailer_tailored_resume").catch(console.warn);
-        const baseResume = (await localforage.getItem("outlio_base_resume")) || (await localforage.getItem("automailer_base_resume"));
+        const baseResume = await localforage.getItem("outlio_base_resume");
         if (baseResume) {
           setResumeFile(baseResume);
           setResumeExists(true);

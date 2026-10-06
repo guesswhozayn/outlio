@@ -72,7 +72,7 @@ outlio/
     │   ├── ServiceWorkerRegister.js # PWA service worker initializer
     │   └── SettingsDrawer.js  # Signature profile & LaTeX resume settings
     ├── hooks/                 # Custom React hooks
-    │   └── useAutoMailer.js   # Application workbench state & logic
+    │   └── useOutlio.js       # Application workbench state & logic
     └── lib/                   # Utility helpers
         ├── auth.js            # NextAuth configuration with Gmail OAuth scopes
         └── gemini.js          # Google Gemini API client & fallback models

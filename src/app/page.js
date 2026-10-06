@@ -10,13 +10,13 @@ import HelpDrawer from "@/components/HelpDrawer";
 import ExtractedFieldsTab from "@/components/ExtractedFieldsTab";
 import HistoryTab from "@/components/HistoryTab";
 import EmailPreviewTab from "@/components/EmailPreviewTab";
-import { useAutoMailer } from "@/hooks/useAutoMailer";
+import { useOutlio } from "@/hooks/useOutlio";
 
 import { ArrowLeftRight } from "lucide-react";
 
 function HomeContent() {
   const { theme, setTheme } = useTheme();
-  const am = useAutoMailer();
+  const am = useOutlio();
 
   if (am.status === "loading") {
     return (
