@@ -80,7 +80,7 @@ export default function JobInput({
           style={{ fontSize: "0.8rem", padding: "0.4rem 0.8rem", minHeight: "36px" }}
           onClick={handleImageUploadClick}
         >
-          Upload Screenshot
+          Upload
         </button>
         <input type="file" ref={imageInputRef} style={{ display: "none" }} accept="image/*" onChange={handleImageChange} />
         {screenshotName && (

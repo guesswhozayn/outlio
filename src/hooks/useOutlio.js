@@ -119,6 +119,8 @@ export function useOutlio() {
     setSubject: outreachState.setSubject,
     emailBody: outreachState.emailBody,
     setEmailBody: outreachState.setEmailBody,
+    emailHtml: outreachState.emailHtml,
+    setEmailHtml: outreachState.setEmailHtml,
     isManuallyEdited: outreachState.isManuallyEdited,
     setIsManuallyEdited: outreachState.setIsManuallyEdited,
     history: outreachState.history,

@@ -11,6 +11,8 @@ export const INITIAL_SETTINGS = {
   USER_GITHUB: "",
   USER_PORTFOLIO: "",
   LATEX_RESUME: "",
+  EMAIL_FONT_FAMILY: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  EMAIL_FONT_SIZE: "15px",
 };
 
 export function useSettings({ session, status, addLog }) {

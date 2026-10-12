@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { FALLBACK_MODELS, DEFAULT_MODEL } from "@/lib/gemini";
-import { Download, Upload } from "lucide-react";
+// Removed unused icons
 
 export default function SettingsDrawer({
   settingsOpen,
@@ -71,6 +71,8 @@ export default function SettingsDrawer({
         USER_GITHUB: settings?.USER_GITHUB || "",
         USER_PORTFOLIO: settings?.USER_PORTFOLIO || "",
         LATEX_RESUME: settings?.LATEX_RESUME || "",
+        EMAIL_FONT_FAMILY: settings?.EMAIL_FONT_FAMILY || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        EMAIL_FONT_SIZE: settings?.EMAIL_FONT_SIZE || "15px",
         exportedAt: new Date().toISOString(),
       };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
@@ -103,6 +105,8 @@ export default function SettingsDrawer({
             USER_GITHUB: imported.USER_GITHUB !== undefined ? imported.USER_GITHUB : (prev.USER_GITHUB || ""),
             USER_PORTFOLIO: imported.USER_PORTFOLIO !== undefined ? imported.USER_PORTFOLIO : (prev.USER_PORTFOLIO || ""),
             LATEX_RESUME: imported.LATEX_RESUME !== undefined ? imported.LATEX_RESUME : (prev.LATEX_RESUME || ""),
+            EMAIL_FONT_FAMILY: imported.EMAIL_FONT_FAMILY || prev.EMAIL_FONT_FAMILY || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+            EMAIL_FONT_SIZE: imported.EMAIL_FONT_SIZE || prev.EMAIL_FONT_SIZE || "15px",
           }));
         }
       } catch {
@@ -261,6 +265,39 @@ export default function SettingsDrawer({
           </div>
 
           <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", marginTop: "1rem", marginBottom: "0.5rem" }} />
+
+          <h3>Email Styling Preferences</h3>
+
+          <div className="form-group">
+            <label>Default Font Style</label>
+            <select
+              value={settings?.EMAIL_FONT_FAMILY || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"}
+              onChange={(e) => setSettings({ ...settings, EMAIL_FONT_FAMILY: e.target.value })}
+            >
+              <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Sans Serif</option>
+              <option value="Georgia, serif">Georgia (Serif)</option>
+              <option value="'Times New Roman', Times, serif">Times New Roman</option>
+              <option value="'Courier New', Courier, monospace">Courier New (Mono)</option>
+              <option value="'Trebuchet MS', 'Lucida Sans Unicode', sans-serif">Trebuchet MS</option>
+              <option value="Arial, Helvetica, sans-serif">Arial</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Default Font Size</label>
+            <select
+              value={settings?.EMAIL_FONT_SIZE || "15px"}
+              onChange={(e) => setSettings({ ...settings, EMAIL_FONT_SIZE: e.target.value })}
+            >
+              <option value="13px">Small (13px)</option>
+              <option value="15px">Normal (15px)</option>
+              <option value="18px">Medium (18px)</option>
+              <option value="22px">Large (22px)</option>
+              <option value="26px">Heading (26px)</option>
+            </select>
+          </div>
+
+          <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", marginTop: "1rem", marginBottom: "0.5rem" }} />
           
           <h3>Resume Configuration</h3>
 
@@ -278,51 +315,8 @@ export default function SettingsDrawer({
           </div>
 
           <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleExport}
-              style={{
-                flex: "1 1 140px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.35rem",
-                fontSize: "0.825rem",
-                padding: "0.55rem 0.75rem",
-                minHeight: "40px",
-              }}
-              title="Download your settings as a JSON file to transfer between devices"
-            >
-              <Download size={15} />
-              <span>Export JSON</span>
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => importFileRef.current?.click()}
-              style={{
-                flex: "1 1 140px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.35rem",
-                fontSize: "0.825rem",
-                padding: "0.55rem 0.75rem",
-                minHeight: "40px",
-              }}
-              title="Import settings from a previously saved JSON file"
-            >
-              <Upload size={15} />
-              <span>Import JSON</span>
-            </button>
-            <input
-              type="file"
-              ref={importFileRef}
-              accept=".json"
-              style={{ display: "none" }}
-              onChange={handleImport}
-            />
+
+
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem", minHeight: "44px" }} disabled={isSavingSettings}>

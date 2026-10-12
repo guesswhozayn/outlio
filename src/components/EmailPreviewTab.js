@@ -1,3 +1,5 @@
+import RichEmailEditor from "./RichEmailEditor";
+
 export default function EmailPreviewTab({
   isFollowUp,
   setIsFollowUp,
@@ -7,10 +9,13 @@ export default function EmailPreviewTab({
   setSubject,
   emailBody,
   setEmailBody,
+  emailHtml,
+  setEmailHtml,
   setIsManuallyEdited,
   resumeExists,
   resumeFile,
   settings,
+  setSettings,
   handleTailorResume,
   isTailoring,
   handleUploadClick,
@@ -51,14 +56,16 @@ export default function EmailPreviewTab({
       </div>
 
       <div className="form-group" style={{ flexGrow: 1 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-          <label style={{ marginBottom: 0 }}>Email Body</label>
-        </div>
-        <textarea
-          className="email-body-input"
-          style={{ flexGrow: 1, minHeight: "300px", fontFamily: "inherit" }}
-          value={emailBody}
-          onChange={(e) => setEmailBody(e.target.value)}
+        <RichEmailEditor
+          emailBody={emailBody}
+          setEmailBody={setEmailBody}
+          emailHtml={emailHtml}
+          setEmailHtml={setEmailHtml}
+          setIsManuallyEdited={setIsManuallyEdited}
+          recipientEmail={fields.email}
+          subject={subject}
+          settings={settings}
+          setSettings={setSettings}
         />
       </div>
 

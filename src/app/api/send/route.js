@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { getServerSession } from "next-auth/next";
 import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
+import { wrapEmailHtml } from "@/lib/emailFormatter";
 
 async function buildRawMessage(mailOptions) {
   const mail = nodemailer.createTransport({ streamTransport: true, newline: 'unix' });
@@ -35,7 +36,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Google authentication missing. Please sign in with Google." }, { status: 400 });
     }
 
-    let toEmail, subject, emailBody, userName;
+    let toEmail, subject, emailBody, emailHtml, userName;
     let resumeAttachment = null;
 
     const contentType = req.headers.get("content-type") || "";
@@ -45,6 +46,7 @@ export async function POST(req) {
       toEmail = body.toEmail;
       subject = body.subject;
       emailBody = body.emailBody;
+      emailHtml = body.emailHtml;
       userName = body.userName;
 
       if (body.resumeBase64) {
@@ -71,6 +73,7 @@ export async function POST(req) {
       toEmail = formData.get('toEmail');
       subject = formData.get('subject');
       emailBody = formData.get('emailBody');
+      emailHtml = formData.get('emailHtml');
       userName = formData.get('userName');
       const resumeFile = formData.get('resume');
 
@@ -97,6 +100,10 @@ export async function POST(req) {
       subject: subject,
       text: emailBody,
     };
+
+    if (emailHtml) {
+      mailOptions.html = wrapEmailHtml(emailHtml);
+    }
 
     if (resumeAttachment) {
       mailOptions.attachments = [resumeAttachment];

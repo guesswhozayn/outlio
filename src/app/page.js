@@ -151,10 +151,13 @@ function HomeContent() {
                 setSubject={am.setSubject}
                 emailBody={am.emailBody}
                 setEmailBody={am.setEmailBody}
+                emailHtml={am.emailHtml}
+                setEmailHtml={am.setEmailHtml}
                 setIsManuallyEdited={am.setIsManuallyEdited}
                 resumeExists={am.resumeExists}
                 resumeFile={am.resumeFile}
                 settings={am.settings}
+                setSettings={am.setSettings}
                 handleTailorResume={am.handleTailorResume}
                 isTailoring={am.isTailoring}
                 handleUploadClick={am.handleUploadClick}

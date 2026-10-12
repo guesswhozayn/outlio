@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import localforage from "localforage";
 import { signIn } from "next-auth/react";
+import { textToHtml } from "@/lib/emailFormatter";
 
 const fileToBase64 = async (fileOrBlob) => {
   if (!fileOrBlob) return null;
@@ -33,6 +34,7 @@ export function useEmailOutreach({
   const [isFollowUp, setIsFollowUp] = useState(false);
   const [manualSubject, setManualSubject] = useState(null);
   const [manualEmailBody, setManualEmailBody] = useState(null);
+  const [manualEmailHtml, setManualEmailHtml] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
   const hasGmailConfig = Boolean(session?.user?.email);
@@ -75,9 +77,17 @@ export function useEmailOutreach({
     };
   }, [fields, settings, isFollowUp]);
 
+  const compiledHtml = useMemo(() => {
+    return textToHtml(compiled.body, {
+      fontFamily: settings?.EMAIL_FONT_FAMILY,
+      fontSize: settings?.EMAIL_FONT_SIZE,
+    });
+  }, [compiled.body, settings]);
+
   const subject = manualSubject !== null ? manualSubject : compiled.subject;
   const emailBody = manualEmailBody !== null ? manualEmailBody : compiled.body;
-  const isManuallyEdited = manualSubject !== null || manualEmailBody !== null;
+  const emailHtml = manualEmailHtml !== null ? manualEmailHtml : compiledHtml;
+  const isManuallyEdited = manualSubject !== null || manualEmailBody !== null || manualEmailHtml !== null;
 
   const setSubject = (val) => {
     setManualSubject(val);
@@ -87,10 +97,15 @@ export function useEmailOutreach({
     setManualEmailBody(val);
   };
 
+  const setEmailHtml = (val) => {
+    setManualEmailHtml(val);
+  };
+
   const handleSetIsManuallyEdited = (val) => {
     if (!val) {
       setManualSubject(null);
       setManualEmailBody(null);
+      setManualEmailHtml(null);
     }
   };
 
@@ -135,6 +150,7 @@ export function useEmailOutreach({
         toEmail: fields.email,
         subject,
         emailBody,
+        emailHtml,
         userName: settings.USER_NAME || "",
         resumeBase64,
         resumeFileName,
@@ -189,6 +205,8 @@ export function useEmailOutreach({
     setSubject,
     emailBody,
     setEmailBody,
+    emailHtml,
+    setEmailHtml,
     isManuallyEdited,
     setIsManuallyEdited: handleSetIsManuallyEdited,
     isSending,

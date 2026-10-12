@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Sun, Moon, LogOut, HelpCircle, LogIn } from "lucide-react";
+import { Settings, Sun, Moon, LogOut, LogIn } from "lucide-react";
 import { signOut, signIn } from "next-auth/react";
 import OutlioLogo from "./OutlioLogo";
 
@@ -27,14 +27,7 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, setH
           </button>
         )}
 
-        <button
-          className="icon-btn"
-          onClick={() => setHelpOpen(true)}
-          title="How to Use Outlio"
-          aria-label="How to Use Outlio"
-        >
-          <HelpCircle size={18} />
-        </button>
+
 
         <button
           className="icon-btn"
