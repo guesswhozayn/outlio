@@ -4,7 +4,7 @@ import { Settings, Sun, Moon, LogOut, LogIn } from "lucide-react";
 import { signOut, signIn } from "next-auth/react";
 import OutlioLogo from "./OutlioLogo";
 
-export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, setHelpOpen, session }) {
+export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, session }) {
   const user = session?.user;
 
   return (
@@ -26,8 +26,6 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, setH
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         )}
-
-
 
         <button
           className="icon-btn"

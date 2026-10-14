@@ -6,7 +6,6 @@ import { signIn } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import JobInput from "@/components/JobInput";
 import SettingsDrawer from "@/components/SettingsDrawer";
-import HelpDrawer from "@/components/HelpDrawer";
 import ExtractedFieldsTab from "@/components/ExtractedFieldsTab";
 import HistoryTab from "@/components/HistoryTab";
 import EmailPreviewTab from "@/components/EmailPreviewTab";
@@ -35,7 +34,6 @@ function HomeContent() {
         theme={theme}
         setTheme={setTheme}
         setSettingsOpen={am.setSettingsOpen}
-        setHelpOpen={am.setHelpOpen}
         session={am.session}
       />
 
@@ -183,11 +181,6 @@ function HomeContent() {
         isSavingSettings={am.isSavingSettings}
         handleSaveSettings={am.handleSaveSettings}
         syncStatus={am.syncStatus}
-      />
-
-      <HelpDrawer
-        helpOpen={am.helpOpen}
-        setHelpOpen={am.setHelpOpen}
       />
     </div>
   );

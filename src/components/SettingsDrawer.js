@@ -1,6 +1,5 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { FALLBACK_MODELS, DEFAULT_MODEL } from "@/lib/gemini";
-// Removed unused icons
 
 export default function SettingsDrawer({
   settingsOpen,
@@ -14,7 +13,6 @@ export default function SettingsDrawer({
   syncStatus = { isCloud: false, storageType: "local_file" }
 }) {
   const allModelsMap = new Map();
-  const importFileRef = useRef(null);
 
   FALLBACK_MODELS.forEach((m) => {
     allModelsMap.set(m.name, m);
@@ -59,63 +57,6 @@ export default function SettingsDrawer({
   });
 
   const [isCustomMode, setIsCustomMode] = useState(false);
-
-  const handleExport = () => {
-    try {
-      const exportData = {
-        GEMINI_API_KEY: settings?.GEMINI_API_KEY || "",
-        MODEL: settings?.MODEL || DEFAULT_MODEL,
-        USER_NAME: settings?.USER_NAME || "",
-        USER_PHONE: settings?.USER_PHONE || "",
-        USER_LINKEDIN: settings?.USER_LINKEDIN || "",
-        USER_GITHUB: settings?.USER_GITHUB || "",
-        USER_PORTFOLIO: settings?.USER_PORTFOLIO || "",
-        LATEX_RESUME: settings?.LATEX_RESUME || "",
-        EMAIL_FONT_FAMILY: settings?.EMAIL_FONT_FAMILY || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-        EMAIL_FONT_SIZE: settings?.EMAIL_FONT_SIZE || "15px",
-        exportedAt: new Date().toISOString(),
-      };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `outlio_settings_${(settings?.USER_NAME || "profile").toLowerCase().replace(/[^a-z0-9]/gi, "_")}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Failed to export settings:", err);
-    }
-  };
-
-  const handleImport = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const imported = JSON.parse(event.target.result);
-        if (imported && typeof imported === "object") {
-          setSettings((prev) => ({
-            ...prev,
-            GEMINI_API_KEY: imported.GEMINI_API_KEY !== undefined ? imported.GEMINI_API_KEY : (prev.GEMINI_API_KEY || ""),
-            MODEL: imported.MODEL || prev.MODEL || DEFAULT_MODEL,
-            USER_NAME: imported.USER_NAME || prev.USER_NAME || "",
-            USER_PHONE: imported.USER_PHONE || prev.USER_PHONE || "",
-            USER_LINKEDIN: imported.USER_LINKEDIN || prev.USER_LINKEDIN || "",
-            USER_GITHUB: imported.USER_GITHUB !== undefined ? imported.USER_GITHUB : (prev.USER_GITHUB || ""),
-            USER_PORTFOLIO: imported.USER_PORTFOLIO !== undefined ? imported.USER_PORTFOLIO : (prev.USER_PORTFOLIO || ""),
-            LATEX_RESUME: imported.LATEX_RESUME !== undefined ? imported.LATEX_RESUME : (prev.LATEX_RESUME || ""),
-            EMAIL_FONT_FAMILY: imported.EMAIL_FONT_FAMILY || prev.EMAIL_FONT_FAMILY || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-            EMAIL_FONT_SIZE: imported.EMAIL_FONT_SIZE || prev.EMAIL_FONT_SIZE || "15px",
-          }));
-        }
-      } catch {
-        alert("Invalid JSON settings file format.");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
 
   return (
     <>
@@ -304,19 +245,11 @@ export default function SettingsDrawer({
           <div className="form-group">
             <label>Base LaTeX Resume Code</label>
             <textarea
-              style={{ flexGrow: 1, minHeight: "150px", fontFamily: "var(--font-mono)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+              style={{ flexGrow: 1, minHeight: "150px", fontFamily: "var(--font-mono)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)", background: "var(--bg-primary)", color: "var(--text-primary)", fontSize: "0.85rem" }}
               placeholder="\documentclass{article}..."
               value={settings?.LATEX_RESUME || ""}
               onChange={(e) => setSettings({ ...settings, LATEX_RESUME: e.target.value })}
             />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Provide the LaTeX code for your resume. You can use placeholders like {"{{USER_NAME}}"}, {"{{USER_PHONE}}"}, {"{{USER_EMAIL}}"}, {"{{USER_LINKEDIN}}"}, {"{{USER_GITHUB}}"}, or {"{{USER_PORTFOLIO}}"} to dynamically insert your profile details. This will be tailored by AI to match job descriptions.
-            </small>
-          </div>
-
-          <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
-
-
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem", minHeight: "44px" }} disabled={isSavingSettings}>

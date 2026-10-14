@@ -1,5 +1,3 @@
-import RichEmailEditor from "./RichEmailEditor";
-
 export default function EmailPreviewTab({
   isFollowUp,
   setIsFollowUp,
@@ -29,9 +27,9 @@ export default function EmailPreviewTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem", flexGrow: 1 }}>
       {isFollowUp && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255, 255, 255, 0.05)", padding: "0.75rem", borderRadius: "var(--radius-md)", marginBottom: "0.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid var(--glass-border)", padding: "0.75rem", borderRadius: "var(--radius-md)", marginBottom: "0.5rem" }}>
           <span style={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 500 }}>Generating Follow-Up Email</span>
-          <button className="btn btn-secondary" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => { setIsFollowUp(false); setIsManuallyEdited(false); }}>Cancel Follow-Up</button>
+          <button className="btn btn-secondary" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => { setIsFollowUp(false); if (setIsManuallyEdited) setIsManuallyEdited(false); }}>Cancel Follow-Up</button>
         </div>
       )}
 
@@ -56,16 +54,24 @@ export default function EmailPreviewTab({
       </div>
 
       <div className="form-group" style={{ flexGrow: 1 }}>
-        <RichEmailEditor
-          emailBody={emailBody}
-          setEmailBody={setEmailBody}
-          emailHtml={emailHtml}
-          setEmailHtml={setEmailHtml}
-          setIsManuallyEdited={setIsManuallyEdited}
-          recipientEmail={fields.email}
-          subject={subject}
-          settings={settings}
-          setSettings={setSettings}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+          <label style={{ margin: 0 }}>Email Body</label>
+        </div>
+        <textarea
+          className="email-body-input"
+          style={{
+            flexGrow: 1,
+            minHeight: "300px",
+            fontFamily: settings?.EMAIL_FONT_FAMILY || "inherit",
+            fontSize: settings?.EMAIL_FONT_SIZE || "15px",
+            lineHeight: "1.6",
+          }}
+          value={emailBody}
+          onChange={(e) => {
+            setEmailBody(e.target.value);
+            if (setIsManuallyEdited) setIsManuallyEdited(true);
+          }}
+          placeholder="Compose your email..."
         />
       </div>
 

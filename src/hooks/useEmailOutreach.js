@@ -77,16 +77,15 @@ export function useEmailOutreach({
     };
   }, [fields, settings, isFollowUp]);
 
-  const compiledHtml = useMemo(() => {
-    return textToHtml(compiled.body, {
+  const subject = manualSubject !== null ? manualSubject : compiled.subject;
+  const emailBody = manualEmailBody !== null ? manualEmailBody : compiled.body;
+  const emailHtml = useMemo(() => {
+    if (manualEmailHtml !== null) return manualEmailHtml;
+    return textToHtml(emailBody, {
       fontFamily: settings?.EMAIL_FONT_FAMILY,
       fontSize: settings?.EMAIL_FONT_SIZE,
     });
-  }, [compiled.body, settings]);
-
-  const subject = manualSubject !== null ? manualSubject : compiled.subject;
-  const emailBody = manualEmailBody !== null ? manualEmailBody : compiled.body;
-  const emailHtml = manualEmailHtml !== null ? manualEmailHtml : compiledHtml;
+  }, [manualEmailHtml, emailBody, settings?.EMAIL_FONT_FAMILY, settings?.EMAIL_FONT_SIZE]);
   const isManuallyEdited = manualSubject !== null || manualEmailBody !== null || manualEmailHtml !== null;
 
   const setSubject = (val) => {

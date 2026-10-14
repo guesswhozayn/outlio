@@ -13,7 +13,6 @@ export function useOutlio() {
 
   const [activeTab, setActiveTab] = useState("preview");
   const [viewMode, setViewMode] = useState("input");
-  const [helpOpen, setHelpOpen] = useState(false);
   const [logs, setLogs] = useState([]);
 
   const addLog = useCallback((message, type = "info") => {
@@ -66,8 +65,6 @@ export function useOutlio() {
     setActiveTab,
     viewMode,
     setViewMode,
-    helpOpen,
-    setHelpOpen,
     logs,
     setLogs,
 
