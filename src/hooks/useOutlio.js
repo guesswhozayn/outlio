@@ -75,10 +75,6 @@ export function useOutlio() {
     setSettingsOpen: settingsState.setSettingsOpen,
     isSavingSettings: settingsState.isSavingSettings,
     handleSaveSettings: settingsState.handleSaveSettings,
-    availableModels: settingsState.availableModels,
-    setAvailableModels: settingsState.setAvailableModels,
-    isFetchingModels: settingsState.isFetchingModels,
-    fetchAvailableModels: settingsState.fetchAvailableModels,
     syncStatus: settingsState.syncStatus,
 
     // Job extraction

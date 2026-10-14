@@ -19,8 +19,6 @@ export function useSettings({ session, status, addLog }) {
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [availableModels, setAvailableModels] = useState([]);
-  const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [syncStatus, setSyncStatus] = useState({ isCloud: false, storageType: "local_file" });
 
   const settingsRef = useRef(settings);
@@ -29,33 +27,6 @@ export function useSettings({ session, status, addLog }) {
   }, [settings]);
 
   const hasInitializedUserRef = useRef(null);
-
-  const fetchAvailableModels = useCallback(async (keyOverride) => {
-    setIsFetchingModels(true);
-    try {
-      const apiKey = keyOverride !== undefined ? keyOverride : settingsRef.current.GEMINI_API_KEY;
-      const res = await fetch("/api/models", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey }),
-      });
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.models) && data.models.length > 0) {
-        setAvailableModels(data.models);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsFetchingModels(false);
-    }
-  }, []);
-
-  const handleSetSettingsOpen = useCallback((open) => {
-    if (open && availableModels.length === 0) {
-      fetchAvailableModels();
-    }
-    setSettingsOpen(open);
-  }, [availableModels.length, fetchAvailableModels]);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -122,11 +93,10 @@ export function useSettings({ session, status, addLog }) {
       }
 
       setSettings({ ...INITIAL_SETTINGS, ...finalSettings });
-      fetchAvailableModels(finalSettings.GEMINI_API_KEY);
     } catch (e) {
       console.error(e);
     }
-  }, [session, fetchAvailableModels, addLog]);
+  }, [session, addLog]);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -188,7 +158,6 @@ export function useSettings({ session, status, addLog }) {
         addLog("Settings saved to this device.", "info");
       }
       setSettingsOpen(false);
-      fetchAvailableModels(settings.GEMINI_API_KEY);
     } catch (e) {
       addLog(`Error saving settings: ${e.message}`, "error");
     } finally {
@@ -201,13 +170,9 @@ export function useSettings({ session, status, addLog }) {
     setSettings,
     settingsRef,
     settingsOpen,
-    setSettingsOpen: handleSetSettingsOpen,
+    setSettingsOpen,
     isSavingSettings,
     handleSaveSettings,
-    availableModels,
-    setAvailableModels,
-    isFetchingModels,
-    fetchAvailableModels,
     syncStatus,
   };
 }
