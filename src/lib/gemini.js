@@ -1,48 +1,56 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-let cachedBestFlashModel = null;
+let cachedAvailableModels = [];
 let lastFetchTime = 0;
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 export function parseModelVersion(modelName = "") {
   const cleanName = modelName.toLowerCase().replace(/^models\//, "");
-  const match = cleanName.match(/gemini-(\d+(?:\.\d+)?)-flash(?:-(preview|lite|latest|\d{4,8}))?/);
+  const match = cleanName.match(/gemini-(\d+(?:\.\d+)?)/);
   if (!match) return -1;
   const majorMinor = parseFloat(match[1]);
   return isNaN(majorMinor) ? 0 : majorMinor;
 }
 
-export function pickBestFlashModel(modelsList = []) {
-  if (!Array.isArray(modelsList) || modelsList.length === 0) return null;
+export function getRankedModels(modelsList = []) {
+  if (!Array.isArray(modelsList) || modelsList.length === 0) return [];
 
-  const flashModels = modelsList.filter((m) => {
+  const supportedModels = modelsList.filter((m) => {
     const name = (m.name || "").toLowerCase();
-    const displayName = (m.displayName || "").toLowerCase();
-    const isFlash = name.includes("flash") || displayName.includes("flash");
-    const isLite = name.includes("lite") || displayName.includes("lite");
-    const is8b = name.includes("-8b") || name.includes("8b");
-    const isDeprecated = name.includes("1.5") || name.includes("2.0-flash-001");
-    return isFlash && !isLite && !is8b && !isDeprecated;
+    const isLegacy = name.includes("1.5") || name.includes("1.0") || name.includes("embedding") || name.includes("aqa");
+    return name.startsWith("gemini-") && !isLegacy;
   });
 
-  if (flashModels.length === 0) {
-    const anyFlash = modelsList.filter((m) => {
-      const name = (m.name || "").toLowerCase();
-      return name.includes("flash");
-    });
-    if (anyFlash.length > 0) return anyFlash[0];
-    return modelsList[0] || null;
-  }
+  supportedModels.sort((a, b) => {
+    const nameA = (a.name || "").toLowerCase();
+    const nameB = (b.name || "").toLowerCase();
 
-  flashModels.sort((a, b) => {
-    const verA = parseModelVersion(a.name || "");
-    const verB = parseModelVersion(b.name || "");
+    const verA = parseModelVersion(nameA);
+    const verB = parseModelVersion(nameB);
     if (verB !== verA) return verB - verA;
-    return (b.name || "").localeCompare(a.name || "");
+
+    const getTier = (n) => {
+      if (n.includes("flash-lite") || n.includes("lite")) return 1;
+      if (n.includes("pro")) return 2;
+      if (n.includes("flash")) return 3;
+      return 2;
+    };
+    const tierDiff = getTier(nameB) - getTier(nameA);
+    if (tierDiff !== 0) return tierDiff;
+
+    return nameB.localeCompare(nameA);
   });
 
-  return flashModels[0];
+  return supportedModels;
 }
+
+export function pickBestModel(modelsList = []) {
+  const ranked = getRankedModels(modelsList);
+  return ranked[0] || null;
+}
+
+export const getRankedFlashModels = getRankedModels;
+export const pickBestFlashModel = pickBestModel;
 
 export function getGeminiApiKey(customKey) {
   return (customKey && typeof customKey === "string" ? customKey.trim() : "") ||
@@ -51,12 +59,25 @@ export function getGeminiApiKey(customKey) {
     "";
 }
 
-export async function getLatestBestFlashModel(customKey) {
+export const ALL_SUPPORTED_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.5-flash",
+  "gemini-3.1-pro",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
+  "gemini-2.5-flash-lite",
+];
+
+export const DEFAULT_MODEL = "gemini-3.8-flash";
+export const FALLBACK_MODELS = ALL_SUPPORTED_MODELS.slice(1);
+
+export async function fetchGeminiModels(customKey) {
   const apiKey = getGeminiApiKey(customKey);
   const now = Date.now();
 
-  if (cachedBestFlashModel && now - lastFetchTime < CACHE_TTL_MS && !customKey) {
-    return cachedBestFlashModel;
+  if (cachedAvailableModels.length > 0 && now - lastFetchTime < CACHE_TTL_MS && !customKey) {
+    return cachedAvailableModels;
   }
 
   if (apiKey) {
@@ -69,54 +90,62 @@ export async function getLatestBestFlashModel(customKey) {
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.models)) {
-          const formatted = data.models.map((m) => ({
-            name: m.name ? m.name.replace(/^models\//, "") : "",
-            displayName: m.displayName || m.name,
-            description: m.description,
-            supportedGenerationMethods: m.supportedGenerationMethods || [],
-          })).filter((m) => {
-            return !m.supportedGenerationMethods.length ||
-              m.supportedGenerationMethods.includes("generateContent");
-          });
-
-          const best = pickBestFlashModel(formatted);
-          if (best && best.name) {
-            const result = {
-              name: best.name,
-              displayName: best.displayName || best.name,
+          const formatted = data.models
+            .map((m) => ({
+              name: m.name ? m.name.replace(/^models\//, "") : "",
+              displayName: m.displayName || m.name,
+              description: m.description,
+              supportedGenerationMethods: m.supportedGenerationMethods || [],
               isVision: true,
-            };
+            }))
+            .filter((m) => {
+              return (
+                !m.supportedGenerationMethods.length ||
+                m.supportedGenerationMethods.includes("generateContent")
+              );
+            });
+
+          const ranked = getRankedModels(formatted);
+          if (ranked.length > 0) {
             if (!customKey) {
-              cachedBestFlashModel = result;
+              cachedAvailableModels = ranked;
               lastFetchTime = now;
             }
-            return result;
+            return ranked;
           }
         }
       }
     } catch (err) {
-      console.warn("Could not fetch latest Flash model from Gemini API:", err.message);
+      console.warn("Could not fetch models from Gemini API:", err.message);
     }
   }
 
-  return cachedBestFlashModel || {
-    name: "gemini-3.8-flash",
-    displayName: "Gemini 3.8 Flash (Latest Best Flash)",
+  const fallbackList = ALL_SUPPORTED_MODELS.map((name) => ({
+    name,
+    displayName: name
+      .replace("gemini-", "Gemini ")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase()),
+    isVision: true,
+  }));
+
+  return fallbackList;
+}
+
+export async function getLatestBestModel(customKey) {
+  const models = await fetchGeminiModels(customKey);
+  return models[0] || {
+    name: DEFAULT_MODEL,
+    displayName: "Gemini 3.8 Flash",
     isVision: true,
   };
 }
 
-export async function fetchGeminiModels(customKey) {
-  const bestModel = await getLatestBestFlashModel(customKey);
-  return [bestModel];
-}
-
-export const DEFAULT_MODEL = "gemini-3.8-flash";
-export const FALLBACK_MODELS = [];
+export const getLatestBestFlashModel = getLatestBestModel;
 
 export async function generateGeminiContent({
   apiKey: userApiKey,
-  model = DEFAULT_MODEL,
+  model,
   prompt,
   systemInstruction,
   image, 
@@ -133,71 +162,95 @@ export async function generateGeminiContent({
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  let selectedModel = model;
-  if (!selectedModel || !selectedModel.startsWith("gemini") || selectedModel === "custom") {
-    const resolvedBest = await getLatestBestFlashModel(userApiKey);
-    selectedModel = resolvedBest?.name || DEFAULT_MODEL;
-  }
+  // Dynamically discover all supported models for this key/account
+  const liveModels = await fetchGeminiModels(userApiKey);
+  const discoveredNames = liveModels.map((m) => m.name).filter(Boolean);
 
-  let attempt = 0;
+  // Compile candidate models in prioritized order:
+  // 1. Any specifically passed model if provided
+  // 2. Discovered live models ranked from best to fallback
+  // 3. Complete list of all supported latest models
+  const candidateModels = [
+    ...(model && model.startsWith("gemini") ? [model] : []),
+    ...discoveredNames,
+    ...ALL_SUPPORTED_MODELS,
+  ].filter((val, idx, arr) => arr.indexOf(val) === idx);
+
   let lastError = null;
 
-  while (attempt <= maxRetries) {
-    const currentModelName = selectedModel;
-    
+  for (let candidateIdx = 0; candidateIdx < candidateModels.length; candidateIdx++) {
+    const currentModelName = candidateModels[candidateIdx];
+    let attempt = 0;
 
-    try {
-      const generativeModel = genAI.getGenerativeModel({
-        model: currentModelName,
-        ...(systemInstruction ? { systemInstruction } : {}),
-        generationConfig: {
-          ...(responseJson ? { responseMimeType: "application/json" } : {}),
-        },
-      });
-
-      const parts = [];
-      if (prompt) {
-        parts.push(prompt);
-      }
-
-      if (image) {
-        parts.push({
-          inlineData: {
-            data: image,
-            mimeType: mimeType || "image/png",
+    while (attempt <= maxRetries) {
+      try {
+        const generativeModel = genAI.getGenerativeModel({
+          model: currentModelName,
+          ...(systemInstruction ? { systemInstruction } : {}),
+          generationConfig: {
+            ...(responseJson ? { responseMimeType: "application/json" } : {}),
           },
         });
+
+        const parts = [];
+        if (prompt) {
+          parts.push(prompt);
+        }
+
+        if (image) {
+          parts.push({
+            inlineData: {
+              data: image,
+              mimeType: mimeType || "image/png",
+            },
+          });
+        }
+
+        const result = await generativeModel.generateContent(parts);
+        const response = await result.response; 
+        const text = response.text();
+
+        if (text === undefined || text === null) {
+          throw new Error("No response content received from Gemini.");
+        }
+
+        return text;
+      } catch (err) {
+        lastError = err;
+        const message = err.message || "";
+        const isQuotaExceeded =
+          err.status === 429 ||
+          message.includes("429") ||
+          message.toLowerCase().includes("quota") ||
+          message.toLowerCase().includes("exceeded your current quota");
+
+        if (isQuotaExceeded) {
+          console.warn(`Quota limit reached on ${currentModelName}. Trying next best available model...`);
+          break; // Break retry loop on this model, switch to next candidate model
+        }
+
+        const isTransient =
+          err.status === 503 ||
+          message.includes("503") ||
+          message.toLowerCase().includes("busy") ||
+          message.toLowerCase().includes("high demand");
+
+        attempt++;
+        if (attempt <= maxRetries && isTransient) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          continue;
+        }
+        break;
       }
-
-      const result = await generativeModel.generateContent(parts);
-      const response = await result.response; 
-      const text = response.text();
-
-      if (text === undefined || text === null) {
-        throw new Error("No response content received from Gemini.");
-      }
-
-      return text;
-    } catch (err) {
-      lastError = err;
-      const message = err.message || "";
-      const isTransient =
-        err.status === 503 ||
-        err.status === 429 ||
-        message.includes("503") ||
-        message.includes("429") ||
-        message.toLowerCase().includes("busy") ||
-        message.toLowerCase().includes("rate limit") ||
-        message.toLowerCase().includes("high demand") ||
-        message.toLowerCase().includes("quota");
-
-      attempt++;
-      if (attempt <= maxRetries && isTransient) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        continue;
-      }
-      break;
     }
+  }
+
+  // If all candidate models exhausted quota, provide clear error message
+  const isAllQuota = (lastError?.message || "").includes("429") || (lastError?.message || "").includes("quota");
+  if (isAllQuota) {
+    throw new Error(
+      `Gemini Free Tier daily quota limit reached on your Google AI Studio project across all supported models. You can either link billing at aistudio.google.com for higher limits, or wait for the daily quota reset.`
+    );
   }
 
   throw lastError || new Error("Failed to complete Gemini request.");

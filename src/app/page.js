@@ -176,8 +176,6 @@ function HomeContent() {
         setSettingsOpen={am.setSettingsOpen}
         settings={am.settings}
         setSettings={am.setSettings}
-        isFetchingModels={am.isFetchingModels}
-        availableModels={am.availableModels}
         isSavingSettings={am.isSavingSettings}
         handleSaveSettings={am.handleSaveSettings}
         syncStatus={am.syncStatus}

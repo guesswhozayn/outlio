@@ -1,22 +1,12 @@
-import { useState } from "react";
-import { DEFAULT_MODEL } from "@/lib/gemini";
-
 export default function SettingsDrawer({
   settingsOpen,
   setSettingsOpen,
   settings = {},
   setSettings,
-  isFetchingModels,
-  availableModels = [],
   isSavingSettings,
   handleSaveSettings,
   syncStatus = { isCloud: false, storageType: "local_file" }
 }) {
-  const bestModel = Array.isArray(availableModels) && availableModels.length > 0
-    ? availableModels[0]
-    : { name: settings?.MODEL || DEFAULT_MODEL, displayName: settings?.MODEL || DEFAULT_MODEL };
-
-  const [isCustomMode, setIsCustomMode] = useState(false);
 
   return (
     <>
@@ -51,55 +41,7 @@ export default function SettingsDrawer({
               spellCheck="false"
             />
             <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Your personal key is stored securely with your profile and used directly for job extraction and resume tailoring.
-            </small>
-          </div>
-
-          <div className="form-group">
-            <label>
-              AI Model {isFetchingModels && <span style={{ fontSize: "0.75rem", color: "var(--accent-cyan)" }}>(updating models...)</span>}
-            </label>
-            <select
-              style={{
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--glass-border)",
-                borderRadius: "var(--radius-md)",
-                padding: "0.75rem 1rem",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-body)",
-                fontSize: "0.95rem",
-                outline: "none",
-                cursor: "pointer"
-              }}
-              value={isCustomMode ? "__custom__" : (settings?.MODEL || bestModel.name || DEFAULT_MODEL)}
-              onChange={(e) => {
-                if (e.target.value === "__custom__") {
-                  setIsCustomMode(true);
-                } else {
-                  setIsCustomMode(false);
-                  setSettings({ ...settings, MODEL: e.target.value });
-                }
-              }}
-            >
-              <option value={bestModel.name}>
-                {bestModel.displayName || bestModel.name}
-              </option>
-              <option value="__custom__">Custom Model...</option>
-            </select>
-            
-            {isCustomMode && (
-              <input
-                type="text"
-                placeholder="e.g. gemini-3.8-flash"
-                value={settings?.MODEL || ""}
-                onChange={(e) => setSettings({ ...settings, MODEL: e.target.value })}
-                style={{ marginTop: "0.5rem" }}
-                autoFocus
-              />
-            )}
-            
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Select which Gemini model to use for job post extraction and resume tailoring.
+              Your personal key is stored securely with your profile and used directly for job extraction and resume tailoring with automatic best-model selection.
             </small>
           </div>
 
