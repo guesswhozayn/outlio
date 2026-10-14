@@ -4,8 +4,7 @@ export function textToHtml(text, options = {}) {
 
   const font = options.fontFamily ? `font-family: ${options.fontFamily}; ` : "";
   const size = options.fontSize ? `font-size: ${options.fontSize}; ` : "";
-  const color = options.color && options.color !== "inherit" ? `color: ${options.color}; ` : "";
-  const style = `margin: 0 0 14px 0; line-height: 1.6; ${font}${size}${color}`.trim();
+  const style = `margin: 0 0 14px 0; line-height: 1.6; ${font}${size}`.trim();
 
   return text
     .split(/\r?\n\r?\n+/)
@@ -48,25 +47,30 @@ export function wrapEmailHtml(content, options = {}) {
 
   const font = options.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
   const size = options.fontSize || "15px";
-  const color = options.color && options.color !== "inherit" ? options.color : "#1a1a1a";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <style>
-    body { margin: 0; padding: 16px; font-family: ${font}; font-size: ${size}; line-height: 1.6; color: ${color}; background-color: #ffffff; }
-    p { margin: 0 0 14px 0; line-height: 1.6; }
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+    body, p, div {
+      font-family: ${font};
+      font-size: ${size};
+      line-height: 1.6;
+    }
+    p { margin: 0 0 14px 0; }
     a { color: #2563eb; text-decoration: underline; }
-    ul, ol { margin: 0 0 14px 20px; padding: 0; }
-    li { margin-bottom: 4px; }
   </style>
 </head>
-<body style="margin: 0; padding: 16px; font-family: ${font}; font-size: ${size}; line-height: 1.6; color: ${color}; background-color: #ffffff;">
-  <div style="max-width: 650px; margin: 0 auto; color: ${color}; font-family: ${font}; font-size: ${size};">
-    ${content}
-  </div>
+<body style="margin: 0; padding: 0; font-family: ${font}; font-size: ${size}; line-height: 1.6;">
+  ${content}
 </body>
 </html>`;
 }
