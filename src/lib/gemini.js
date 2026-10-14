@@ -1,17 +1,48 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export const DEFAULT_MODEL = "gemini-3.8-flash";
+let cachedBestFlashModel = null;
+let lastFetchTime = 0;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache
 
-export const BEST_MODELS = [
-  { name: "gemini-3.8-flash", displayName: "Gemini 3.8 Flash", isVision: true },
-  { name: "gemini-3.5-flash", displayName: "Gemini 3.5 Flash", isVision: true },
-  { name: "gemini-3.1-pro", displayName: "Gemini 3.1 Pro", isVision: true },
-  { name: "gemini-3.1-flash-lite", displayName: "Gemini 3.1 Flash Lite", isVision: true },
-  { name: "gemini-2.5-pro", displayName: "Gemini 2.5 Pro", isVision: true },
-  { name: "gemini-2.5-flash", displayName: "Gemini 2.5 Flash", isVision: true },
-];
+export function parseModelVersion(modelName = "") {
+  const cleanName = modelName.toLowerCase().replace(/^models\//, "");
+  const match = cleanName.match(/gemini-(\d+(?:\.\d+)?)-flash(?:-(preview|lite|latest|\d{4,8}))?/);
+  if (!match) return -1;
+  const majorMinor = parseFloat(match[1]);
+  return isNaN(majorMinor) ? 0 : majorMinor;
+}
 
-export const FALLBACK_MODELS = BEST_MODELS;
+export function pickBestFlashModel(modelsList = []) {
+  if (!Array.isArray(modelsList) || modelsList.length === 0) return null;
+
+  const flashModels = modelsList.filter((m) => {
+    const name = (m.name || "").toLowerCase();
+    const displayName = (m.displayName || "").toLowerCase();
+    const isFlash = name.includes("flash") || displayName.includes("flash");
+    const isLite = name.includes("lite") || displayName.includes("lite");
+    const is8b = name.includes("-8b") || name.includes("8b");
+    const isDeprecated = name.includes("1.5") || name.includes("2.0-flash-001");
+    return isFlash && !isLite && !is8b && !isDeprecated;
+  });
+
+  if (flashModels.length === 0) {
+    const anyFlash = modelsList.filter((m) => {
+      const name = (m.name || "").toLowerCase();
+      return name.includes("flash");
+    });
+    if (anyFlash.length > 0) return anyFlash[0];
+    return modelsList[0] || null;
+  }
+
+  flashModels.sort((a, b) => {
+    const verA = parseModelVersion(a.name || "");
+    const verB = parseModelVersion(b.name || "");
+    if (verB !== verA) return verB - verA;
+    return (b.name || "").localeCompare(a.name || "");
+  });
+
+  return flashModels[0];
+}
 
 export function getGeminiApiKey(customKey) {
   return (customKey && typeof customKey === "string" ? customKey.trim() : "") ||
@@ -20,41 +51,68 @@ export function getGeminiApiKey(customKey) {
     "";
 }
 
-export async function fetchGeminiModels(customKey) {
+export async function getLatestBestFlashModel(customKey) {
   const apiKey = getGeminiApiKey(customKey);
-  if (!apiKey) {
-    return BEST_MODELS;
+  const now = Date.now();
+
+  if (cachedBestFlashModel && now - lastFetchTime < CACHE_TTL_MS && !customKey) {
+    return cachedBestFlashModel;
   }
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
-      {
-        next: { revalidate: 3600 },
+  if (apiKey) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+        { next: { revalidate: 3600 } }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.models)) {
+          const formatted = data.models.map((m) => ({
+            name: m.name ? m.name.replace(/^models\//, "") : "",
+            displayName: m.displayName || m.name,
+            description: m.description,
+            supportedGenerationMethods: m.supportedGenerationMethods || [],
+          })).filter((m) => {
+            return !m.supportedGenerationMethods.length ||
+              m.supportedGenerationMethods.includes("generateContent");
+          });
+
+          const best = pickBestFlashModel(formatted);
+          if (best && best.name) {
+            const result = {
+              name: best.name,
+              displayName: best.displayName || best.name,
+              isVision: true,
+            };
+            if (!customKey) {
+              cachedBestFlashModel = result;
+              lastFetchTime = now;
+            }
+            return result;
+          }
+        }
       }
-    );
-
-    if (!res.ok) {
-      return BEST_MODELS;
+    } catch (err) {
+      console.warn("Could not fetch latest Flash model from Gemini API:", err.message);
     }
-
-    const data = await res.json();
-    if (!data || !Array.isArray(data.models)) {
-      return BEST_MODELS;
-    }
-
-    const availableIds = new Set(
-      data.models.map((m) => (m.name ? m.name.replace(/^models\//, "") : ""))
-    );
-
-    const matchedModels = BEST_MODELS.filter((bm) => availableIds.has(bm.name));
-
-    return matchedModels.length > 0 ? matchedModels : BEST_MODELS;
-  } catch (error) {
-    console.error("Failed to fetch Gemini models:", error); 
-    return BEST_MODELS;
   }
+
+  return cachedBestFlashModel || {
+    name: "gemini-3.8-flash",
+    displayName: "Gemini 3.8 Flash (Latest Best Flash)",
+    isVision: true,
+  };
 }
+
+export async function fetchGeminiModels(customKey) {
+  const bestModel = await getLatestBestFlashModel(customKey);
+  return [bestModel];
+}
+
+export const DEFAULT_MODEL = "gemini-3.8-flash";
+export const FALLBACK_MODELS = [];
 
 export async function generateGeminiContent({
   apiKey: userApiKey,
@@ -77,17 +135,15 @@ export async function generateGeminiContent({
 
   let selectedModel = model;
   if (!selectedModel || !selectedModel.startsWith("gemini") || selectedModel === "custom") {
-    selectedModel = DEFAULT_MODEL;
+    const resolvedBest = await getLatestBestFlashModel(userApiKey);
+    selectedModel = resolvedBest?.name || DEFAULT_MODEL;
   }
 
   let attempt = 0;
   let lastError = null;
 
   while (attempt <= maxRetries) {
-    const currentModelName = 
-      attempt === maxRetries && selectedModel.includes("3.") && selectedModel !== "gemini-3.1-flash-lite"
-        ? "gemini-3.1-flash-lite"
-        : selectedModel;
+    const currentModelName = selectedModel;
     
 
     try {

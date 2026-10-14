@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FALLBACK_MODELS, DEFAULT_MODEL } from "@/lib/gemini";
+import { DEFAULT_MODEL } from "@/lib/gemini";
 
 export default function SettingsDrawer({
   settingsOpen,
@@ -12,49 +12,9 @@ export default function SettingsDrawer({
   handleSaveSettings,
   syncStatus = { isCloud: false, storageType: "local_file" }
 }) {
-  const allModelsMap = new Map();
-
-  FALLBACK_MODELS.forEach((m) => {
-    allModelsMap.set(m.name, m);
-  });
-
-  if (Array.isArray(availableModels) && availableModels.length > 0) {
-    availableModels.forEach((m) => {
-      if (m && m.name) {
-        allModelsMap.set(m.name, m);
-      }
-    });
-  }
-
-  const currentModel = settings?.MODEL || DEFAULT_MODEL;
-  if (
-    currentModel &&
-    currentModel !== "custom" &&
-    currentModel !== "__custom__" &&
-    currentModel.startsWith("gemini") &&
-    !allModelsMap.has(currentModel)
-  ) {
-    allModelsMap.set(currentModel, {
-      name: currentModel,
-      displayName: currentModel,
-      isVision: true,
-    });
-  }
-
-  const modelRank = {
-    "gemini-3.8-flash": 1,
-    "gemini-3.5-flash": 2,
-    "gemini-3.1-pro": 3,
-    "gemini-3.1-flash-lite": 4,
-  };
-
-  const modelOptions = Array.from(allModelsMap.values());
-  modelOptions.sort((a, b) => {
-    const rankA = modelRank[a.name] || 99;
-    const rankB = modelRank[b.name] || 99;
-    if (rankA !== rankB) return rankA - rankB;
-    return (a.displayName || a.name).localeCompare(b.displayName || b.name);
-  });
+  const bestModel = Array.isArray(availableModels) && availableModels.length > 0
+    ? availableModels[0]
+    : { name: settings?.MODEL || DEFAULT_MODEL, displayName: settings?.MODEL || DEFAULT_MODEL };
 
   const [isCustomMode, setIsCustomMode] = useState(false);
 
@@ -111,7 +71,7 @@ export default function SettingsDrawer({
                 outline: "none",
                 cursor: "pointer"
               }}
-              value={isCustomMode ? "__custom__" : (settings?.MODEL || DEFAULT_MODEL)}
+              value={isCustomMode ? "__custom__" : (settings?.MODEL || bestModel.name || DEFAULT_MODEL)}
               onChange={(e) => {
                 if (e.target.value === "__custom__") {
                   setIsCustomMode(true);
@@ -121,14 +81,9 @@ export default function SettingsDrawer({
                 }
               }}
             >
-              {modelOptions.map((m) => {
-                const label = m.displayName || m.name;
-                return (
-                  <option key={m.name} value={m.name}>
-                    {label}
-                  </option>
-                );
-              })}
+              <option value={bestModel.name}>
+                {bestModel.displayName || bestModel.name}
+              </option>
               <option value="__custom__">Custom Model...</option>
             </select>
             
