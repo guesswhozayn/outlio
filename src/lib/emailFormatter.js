@@ -10,7 +10,7 @@ function autolink(text) {
   linked = linked.replace(phoneRegex, (match) => {
     const rawDigits = match.replace(/[^\d+]/g, "");
     if (rawDigits.length < 7) return match;
-    return `<a href="tel:${rawDigits}" style="color: inherit; text-decoration: underline;">${match}</a>`;
+    return `<a href="tel:${rawDigits}" style="color: #2563eb; text-decoration: underline;">${match}</a>`;
   });
 
   return linked;
