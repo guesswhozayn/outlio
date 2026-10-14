@@ -1,3 +1,21 @@
+function autolink(text) {
+  const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+|(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s<]*)?)/g;
+  let linked = text.replace(urlRegex, (url) => {
+    if (/^[+0-9()-]+$/.test(url)) return url;
+    const href = url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+    return `<a href="${href}" style="color: #2563eb; text-decoration: underline;" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+
+  const phoneRegex = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
+  linked = linked.replace(phoneRegex, (match) => {
+    const rawDigits = match.replace(/[^\d+]/g, "");
+    if (rawDigits.length < 7) return match;
+    return `<a href="tel:${rawDigits}" style="color: inherit; text-decoration: underline;">${match}</a>`;
+  });
+
+  return linked;
+}
+
 export function textToHtml(text, options = {}) {
   if (!text) return "";
   if (/<(p|div|ul|ol|table|h[1-6])[\s>]/i.test(text)) return text;
@@ -11,7 +29,8 @@ export function textToHtml(text, options = {}) {
     .map((p) => {
       const trimmed = p.trim();
       if (!trimmed) return "";
-      const content = trimmed.replace(/\r?\n/g, "<br>");
+      const withLinks = autolink(trimmed);
+      const content = withLinks.replace(/\r?\n/g, "<br>");
       return `<p style="${style}">${content}</p>`;
     })
     .filter(Boolean)
