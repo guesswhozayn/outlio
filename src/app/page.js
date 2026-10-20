@@ -172,8 +172,6 @@ function HomeContent() {
         isSavingSettings={am.isSavingSettings}
         handleSaveSettings={am.handleSaveSettings}
         syncStatus={am.syncStatus}
-        isCompilingBase={am.isCompilingBase}
-        handleCompileBaseResume={am.handleCompileBaseResume}
       />
     </div>
   );

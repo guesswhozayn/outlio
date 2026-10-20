@@ -7,9 +7,7 @@ export default function SettingsDrawer({
   setSettings,
   isSavingSettings,
   handleSaveSettings,
-  syncStatus = { isCloud: false, storageType: "local_file" },
-  isCompilingBase = false,
-  handleCompileBaseResume
+  syncStatus = { isCloud: false, storageType: "local_file" }
 }) {
   useEffect(() => {
     if (!settingsOpen) return;
@@ -157,13 +155,14 @@ export default function SettingsDrawer({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
                 <label style={{ margin: 0 }}>LaTeX template</label>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
-                  {!settings?.LATEX_RESUME && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }}
-                      onClick={() => {
-                        const sampleTemplate = `\\documentclass[letterpaper,10pt]{article}
+                  {
+                    !settings?.LATEX_RESUME && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }}
+                        onClick={() => {
+                          const sampleTemplate = `\\documentclass[letterpaper,10pt]{article}
 \\usepackage[left=0.75in,top=0.6in,right=0.75in,bottom=0.6in]{geometry}
 \\usepackage{hyperref}
 \\usepackage{enumitem}
@@ -186,23 +185,13 @@ export default function SettingsDrawer({
 \\textbf{Languages \\& Frameworks:} JavaScript, TypeScript, React, Next.js, Node.js, Python, PostgreSQL.
 
 \\end{document}`;
-                        setSettings({ ...settings, LATEX_RESUME: sampleTemplate });
-                      }}
-                    >
-                      Insert template
-                    </button>
-                  )}
-                  {handleCompileBaseResume && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }}
-                      onClick={handleCompileBaseResume}
-                      disabled={isCompilingBase || !settings?.LATEX_RESUME?.trim()}
-                    >
-                      {isCompilingBase ? "Compiling..." : "Compile PDF"}
-                    </button>
-                  )}
+                          setSettings({ ...settings, LATEX_RESUME: sampleTemplate });
+                        }}
+                      >
+                        Insert template
+                      </button>
+                    )
+                  }
                 </div>
               </div>
               <textarea

@@ -20,7 +20,14 @@ export function useOutlio() {
     setLogs((prev) => [...prev, { timestamp, message, type }]);
   }, []);
 
-  const settingsState = useSettings({ session, status, addLog });
+  const settingsState = useSettings({
+    session,
+    status,
+    addLog,
+    onLatexUpdated: (latex) => {
+      resumeState.handleCompileBaseResume(latex);
+    },
+  });
 
   const extractionState = useJobExtraction({
     status,
@@ -51,6 +58,7 @@ export function useOutlio() {
     clearFields: extractionState.clearFields,
     resumeExists: resumeState.resumeExists,
     resumeFile: resumeState.resumeFile,
+    compileBaseFromLatex: resumeState.compileBaseFromLatex,
     resetTailoredToDefault: resumeState.resetTailoredToDefault,
     addLog,
   });

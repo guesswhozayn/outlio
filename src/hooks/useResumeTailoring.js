@@ -65,12 +65,13 @@ export function useResumeTailoring({
     return pdfBlob;
   }, [settings, session]);
 
-  const handleCompileBaseResume = async () => {
+  const handleCompileBaseResume = async (latexTemplate) => {
     if (status === "unauthenticated") {
       signIn("google");
       return;
     }
-    if (!settings?.LATEX_RESUME?.trim()) {
+    const targetLatex = latexTemplate || settings?.LATEX_RESUME;
+    if (!targetLatex?.trim()) {
       addLog("Please enter LaTeX resume code first.", "error");
       return;
     }
@@ -78,7 +79,7 @@ export function useResumeTailoring({
     setIsCompilingBase(true);
     addLog("Compiling base PDF from LaTeX code...", "info");
     try {
-      const pdfBlob = await compileBaseFromLatex();
+      const pdfBlob = await compileBaseFromLatex(targetLatex);
       if (pdfBlob) {
         await localforage.setItem("outlio_base_resume", pdfBlob);
         setResumeFile(pdfBlob);

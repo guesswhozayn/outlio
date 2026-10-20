@@ -27,6 +27,7 @@ export function useEmailOutreach({
   clearFields,
   resumeExists,
   resumeFile,
+  compileBaseFromLatex,
   resetTailoredToDefault,
   addLog,
 }) {
@@ -132,7 +133,7 @@ export function useEmailOutreach({
         resumeFileName = getCleanFileName(resumeFile);
       }
 
-      if (!resumeBase64 && resumeExists) {
+      if (!resumeBase64) {
         const stored = (await localforage.getItem("outlio_tailored_resume")) ||
           (await localforage.getItem("outlio_base_resume"));
         if (stored) {
@@ -141,8 +142,18 @@ export function useEmailOutreach({
         }
       }
 
+      if (!resumeBase64 && settings?.LATEX_RESUME?.trim() && compileBaseFromLatex) {
+        addLog("Compiling resume attachment from LaTeX...", "info");
+        const freshBlob = await compileBaseFromLatex();
+        if (freshBlob) {
+          await localforage.setItem("outlio_base_resume", freshBlob);
+          resumeBase64 = await fileToBase64(freshBlob);
+          resumeFileName = getCleanFileName(freshBlob);
+        }
+      }
+
       if (resumeExists && !resumeBase64) {
-        throw new Error("Resume attachment is missing or unreadable. Please re-upload your resume.");
+        throw new Error("Resume attachment is missing. Please save your LaTeX template in settings.");
       }
 
       const payload = {

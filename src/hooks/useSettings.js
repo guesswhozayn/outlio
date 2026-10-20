@@ -15,7 +15,7 @@ export const INITIAL_SETTINGS = {
   EMAIL_FONT_SIZE: "15px",
 };
 
-export function useSettings({ session, status, addLog }) {
+export function useSettings({ session, status, addLog, onLatexUpdated }) {
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -158,6 +158,10 @@ export function useSettings({ session, status, addLog }) {
         addLog("Settings saved to this device.", "info");
       }
       setSettingsOpen(false);
+
+      if (settings?.LATEX_RESUME?.trim() && onLatexUpdated) {
+        onLatexUpdated(settings.LATEX_RESUME);
+      }
     } catch (e) {
       addLog(`Error saving settings: ${e.message}`, "error");
     } finally {
