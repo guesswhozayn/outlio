@@ -55,7 +55,7 @@ function HomeContent() {
             }}
           >
             <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
-              Sign in with Google to extract jobs, tailor resumes, and send applications.
+              Sign in with Google to extract jobs, optimize resumes, and send applications.
             </span>
             <button
               className="btn btn-primary"
@@ -153,6 +153,7 @@ function HomeContent() {
                 setEmailHtml={am.setEmailHtml}
                 setIsManuallyEdited={am.setIsManuallyEdited}
                 resumeExists={am.resumeExists}
+                settings={am.settings}
                 handleTailorResume={am.handleTailorResume}
                 isTailoring={am.isTailoring}
                 isSending={am.isSending}

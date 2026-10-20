@@ -48,7 +48,7 @@ export default function HelpDrawer({ helpOpen, setHelpOpen }) {
               }}
             >
               <h3 style={{ fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.25rem" }}>
-                2. Review & Tailor
+                2. Review & Optimize
               </h3>
               <p style={{ fontSize: "0.825rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
                 Check the email draft & resume attachment. Customize your signature details in <strong>Settings</strong> anytime.

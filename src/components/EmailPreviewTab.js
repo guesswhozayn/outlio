@@ -11,6 +11,7 @@ export default function EmailPreviewTab({
   setEmailHtml,
   setIsManuallyEdited,
   resumeExists,
+  settings,
   handleTailorResume,
   isTailoring,
   isSending,
@@ -82,7 +83,7 @@ export default function EmailPreviewTab({
             onClick={handleTailorResume}
             disabled={isTailoring}
           >
-            {isTailoring ? "Tailoring..." : "Tailor Resume"}
+            {isTailoring ? "Optimizing..." : "Optimize"}
           </button>
           
           <button

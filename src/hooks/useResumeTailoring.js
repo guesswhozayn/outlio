@@ -127,7 +127,7 @@ export function useResumeTailoring({
     }
 
     setIsTailoring(true);
-    addLog("Tailoring resume with AI...", "info");
+    addLog("Optimizing resume with AI...", "info");
 
     try {
       let tailoredLatexTemplate = settings.LATEX_RESUME;
@@ -195,9 +195,9 @@ export function useResumeTailoring({
       await localforage.setItem("outlio_tailored_resume", pdfBlob);
       setResumeFile(pdfBlob);
       setResumeExists(true);
-      addLog("Tailored resume generated and attached successfully!", "success");
+      addLog("Optimized resume generated and attached successfully!", "success");
     } catch (error) {
-      addLog(`Error tailoring resume: ${error.message}`, "error");
+      addLog(`Error optimizing resume: ${error.message}`, "error");
       if (error.message?.includes("Gemini API key")) {
         setSettingsOpen(true);
       }
