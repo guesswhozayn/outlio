@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import localforage from "localforage";
 import { signIn } from "next-auth/react";
 
@@ -13,10 +13,8 @@ export function useResumeTailoring({
 }) {
   const [resumeExists, setResumeExists] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isTailoring, setIsTailoring] = useState(false);
   const [isCompilingBase, setIsCompilingBase] = useState(false);
-  const fileInputRef = useRef(null);
 
   const compileBaseFromLatex = useCallback(async (latexTemplate) => {
     const rawLatex = latexTemplate || settings?.LATEX_RESUME;
@@ -116,35 +114,6 @@ export function useResumeTailoring({
       }
     })();
   }, [status, addLog]);
-
-  const handleUploadClick = () => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-    if (file.type !== "application/pdf") {
-      addLog("Only PDF files are supported.", "error");
-      return;
-    }
-    setIsUploading(true);
-    try {
-      await localforage.setItem("outlio_base_resume", file);
-      setResumeFile(file);
-      setResumeExists(true);
-      addLog("Resume saved securely in browser.", "success");
-    } catch {
-      addLog("Error saving resume.", "error");
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const handleTailorResume = async () => {
     if (status === "unauthenticated") {
@@ -253,12 +222,8 @@ export function useResumeTailoring({
     setResumeExists,
     resumeFile,
     setResumeFile,
-    isUploading,
     isTailoring,
     isCompilingBase,
-    fileInputRef,
-    handleUploadClick,
-    handleFileChange,
     handleTailorResume,
     handleCompileBaseResume,
     compileBaseFromLatex,

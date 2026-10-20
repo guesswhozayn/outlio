@@ -153,9 +153,6 @@ function HomeContent() {
                 setEmailHtml={am.setEmailHtml}
                 setIsManuallyEdited={am.setIsManuallyEdited}
                 resumeExists={am.resumeExists}
-                resumeFile={am.resumeFile}
-                settings={am.settings}
-                setSettings={am.setSettings}
                 handleTailorResume={am.handleTailorResume}
                 isTailoring={am.isTailoring}
                 isSending={am.isSending}
