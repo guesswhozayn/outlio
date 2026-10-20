@@ -2,7 +2,7 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem" }}>
       <div className="form-group">
-        <label>HR Recipient Email</label>
+        <label>Recipient email</label>
         <input
           type="email"
           placeholder="recruiter@company.com"
@@ -11,16 +11,16 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         />
       </div>
       <div className="form-group">
-        <label>Job Title (Position)</label>
+        <label>Job title</label>
         <input
           type="text"
-          placeholder="Job title"
+          placeholder="Software Engineer"
           value={fields.jobTitle}
           onChange={(e) => setFields({ ...fields, jobTitle: e.target.value })}
         />
       </div>
       <div className="form-group">
-        <label>Company Name</label>
+        <label>Company</label>
         <input
           type="text"
           placeholder="Company name"
@@ -29,25 +29,25 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         />
       </div>
       <div className="form-group">
-        <label>Hiring Manager / Team</label>
+        <label>Hiring team or contact</label>
         <input
           type="text"
-          placeholder="Hiring Manager / Team"
+          placeholder="Hiring team or manager"
           value={fields.recipientName}
           onChange={(e) => setFields({ ...fields, recipientName: e.target.value })}
         />
       </div>
       <div className="form-group">
-        <label>Key Technologies / Field</label>
+        <label>Key technologies</label>
         <input
           type="text"
-          placeholder="React, Node.js"
+          placeholder="React, Node.js, TypeScript"
           value={fields.skills}
           onChange={(e) => setFields({ ...fields, skills: e.target.value })}
         />
       </div>
       <div className="form-group">
-        <label>Key Requirements / Responsibilities (One per line)</label>
+        <label>Requirements</label>
         <textarea
           placeholder="Key requirements (one per line)..."
           value={
@@ -64,9 +64,9 @@ export default function ExtractedFieldsTab({ fields, setFields }) {
         />
       </div>
       <div className="form-group">
-        <label>Comprehensive Skills</label>
+        <label>Skills summary</label>
         <textarea
-          placeholder="Extracted tech stack & skills..."
+          placeholder="Extracted tech stack and skills..."
           value={fields.comprehensiveSkills}
           onChange={(e) => setFields({ ...fields, comprehensiveSkills: e.target.value })}
           rows={3}

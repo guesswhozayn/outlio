@@ -21,7 +21,7 @@ export default function JobInput({
     <div className="card" style={{ height: "100%" }}>
       <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div className="card-title">Paste Job Description</div>
+          <div className="card-title">Job description</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <span className="char-counter">{postText.length} chars</span>
@@ -30,8 +30,8 @@ export default function JobInput({
               type="button"
               className="icon-btn"
               onClick={() => setViewMode("workspace")}
-              title="Switch to Email Box"
-              aria-label="Switch to Email Box"
+              title="Switch to email"
+              aria-label="Switch to email"
             >
               <ArrowLeftRight size={16} />
             </button>
@@ -42,7 +42,7 @@ export default function JobInput({
       <div className="form-group" style={{ flexGrow: 1 }}>
         <textarea
           className="post-input"
-          placeholder="Paste job description text..."
+          placeholder="Paste job post text or requirements..."
           value={postText}
           onChange={(e) => setPostText(e.target.value)}
         />

@@ -68,32 +68,38 @@ export default function EmailPreviewTab({
         />
       </div>
 
-      <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>
+          <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: resumeExists ? "var(--accent)" : "var(--glass-border)" }}></span>
+          <span>{resumeExists ? "Resume attached" : "No resume"}</span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <button
             type="button"
             className="btn btn-secondary"
-            style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", minHeight: "36px" }}
+            style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", minHeight: "38px" }}
             onClick={handleTailorResume}
             disabled={isTailoring}
           >
             {isTailoring ? "Tailoring..." : "Tailor Resume"}
           </button>
+          
+          <button
+            className="btn btn-success"
+            style={{ minHeight: "38px", minWidth: "90px" }}
+            disabled={isSending || !fields.email || !resumeExists || !hasGmailConfig}
+            onClick={handleSendEmail}
+          >
+            {isSending ? (
+              <>
+                <div className="spinner"></div> Sending...
+              </>
+            ) : (
+              "Send"
+            )}
+          </button>
         </div>
-        
-        <button
-          className="btn btn-success"
-          disabled={isSending || !fields.email || !resumeExists || !hasGmailConfig}
-          onClick={handleSendEmail}
-        >
-          {isSending ? (
-            <>
-              <div className="spinner"></div> Sending...
-            </>
-          ) : (
-            "Send"
-          )}
-        </button>
       </div>
     </div>
   );
