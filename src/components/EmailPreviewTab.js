@@ -16,10 +16,6 @@ export default function EmailPreviewTab({
   setSettings,
   handleTailorResume,
   isTailoring,
-  handleUploadClick,
-  isUploading,
-  fileInputRef,
-  handleFileChange,
   isSending,
   hasGmailConfig,
   handleSendEmail,
@@ -76,22 +72,16 @@ export default function EmailPreviewTab({
       </div>
 
       <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <div className="attachment-row flex-row" style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div className="flex-gap-2 attachment-label" style={{ wordBreak: "break-word", minWidth: 0 }}>
-            <span>Attachment:</span>
-            <span style={{ color: "var(--text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis" }}>
-              {resumeExists ? (resumeFile?.name || ((settings.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, '_') + "_resume.pdf")) : "None"}
-            </span>
-          </div>
-          <div className="attachment-actions" style={{ display: "flex", gap: "0.5rem" }}>
-            <button className="btn btn-secondary" style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", minHeight: "36px" }} onClick={handleTailorResume} disabled={isTailoring}>
-              {isTailoring ? "Tailoring..." : "Tailor Resume"}
-            </button>
-            <button className="btn btn-secondary" style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", minHeight: "36px" }} onClick={handleUploadClick}>
-              {isUploading ? "Uploading..." : "Upload PDF"}
-            </button>
-          </div>
-          <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".pdf" onChange={handleFileChange} />
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", minHeight: "36px" }}
+            onClick={handleTailorResume}
+            disabled={isTailoring}
+          >
+            {isTailoring ? "Tailoring..." : "Tailor Resume"}
+          </button>
         </div>
         
         <button

@@ -15,7 +15,84 @@ export function useResumeTailoring({
   const [resumeFile, setResumeFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isTailoring, setIsTailoring] = useState(false);
+  const [isCompilingBase, setIsCompilingBase] = useState(false);
   const fileInputRef = useRef(null);
+
+  const compileBaseFromLatex = useCallback(async (latexTemplate) => {
+    const rawLatex = latexTemplate || settings?.LATEX_RESUME;
+    if (!rawLatex) return null;
+
+    const replaceLatexValue = (template, placeholder, rawValue) => {
+      if (!rawValue) return template.replaceAll(placeholder, "");
+      return template.replaceAll(placeholder, (match, offset, fullStr) => {
+        const before = fullStr.slice(Math.max(0, offset - 40), offset);
+        const isInsideHrefUrl = /\\href\{[^{}]*$/.test(before);
+        const isInsideUrl = /\\url\{[^{}]*$/.test(before);
+        if (isInsideHrefUrl || isInsideUrl) return rawValue;
+        return String(rawValue)
+          .replace(/\\/g, "\\textbackslash{}")
+          .replace(/([&%$#_{}])/g, "\\$1")
+          .replace(/~/g, "\\textasciitilde{}")
+          .replace(/\^/g, "\\textasciicircum{}");
+      });
+    };
+
+    let processed = rawLatex;
+    const replacements = [
+      ["{{USER_NAME}}", settings?.USER_NAME || ""],
+      ["{{USER_PHONE}}", settings?.USER_PHONE || ""],
+      ["{{USER_EMAIL}}", session?.user?.email || ""],
+      ["{{USER_LINKEDIN}}", settings?.USER_LINKEDIN || ""],
+      ["{{USER_GITHUB}}", settings?.USER_GITHUB || ""],
+      ["{{USER_PORTFOLIO}}", settings?.USER_PORTFOLIO || ""],
+    ];
+    replacements.forEach(([key, val]) => {
+      processed = replaceLatexValue(processed, key, val);
+    });
+
+    const compileRes = await fetch("/api/latex", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ latexCode: processed, userName: settings?.USER_NAME }),
+    });
+
+    if (!compileRes.ok) {
+      const errData = await compileRes.json().catch(() => ({}));
+      throw new Error(errData.error || "Failed to compile base LaTeX template");
+    }
+
+    const pdfBlob = await compileRes.blob();
+    const defaultFileName = (settings?.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, "_") + "_resume.pdf";
+    pdfBlob.name = defaultFileName;
+    return pdfBlob;
+  }, [settings, session]);
+
+  const handleCompileBaseResume = async () => {
+    if (status === "unauthenticated") {
+      signIn("google");
+      return;
+    }
+    if (!settings?.LATEX_RESUME?.trim()) {
+      addLog("Please enter LaTeX resume code first.", "error");
+      return;
+    }
+
+    setIsCompilingBase(true);
+    addLog("Compiling base PDF from LaTeX code...", "info");
+    try {
+      const pdfBlob = await compileBaseFromLatex();
+      if (pdfBlob) {
+        await localforage.setItem("outlio_base_resume", pdfBlob);
+        setResumeFile(pdfBlob);
+        setResumeExists(true);
+        addLog("Base PDF compiled and attached successfully!", "success");
+      }
+    } catch (err) {
+      addLog(`LaTeX compilation error: ${err.message}`, "error");
+    } finally {
+      setIsCompilingBase(false);
+    }
+  };
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -32,7 +109,7 @@ export function useResumeTailoring({
         } else if (isValidResume(baseResume)) {
           setResumeFile(baseResume);
           setResumeExists(true);
-          addLog("Default resume loaded from browser storage.", "success");
+          addLog("Base resume loaded from browser storage.", "success");
         }
       } catch (err) {
         console.warn("Browser storage access denied for resume:", err);
@@ -178,10 +255,13 @@ export function useResumeTailoring({
     setResumeFile,
     isUploading,
     isTailoring,
+    isCompilingBase,
     fileInputRef,
     handleUploadClick,
     handleFileChange,
     handleTailorResume,
+    handleCompileBaseResume,
+    compileBaseFromLatex,
     resetTailoredToDefault,
   };
 }

@@ -158,10 +158,6 @@ function HomeContent() {
                 setSettings={am.setSettings}
                 handleTailorResume={am.handleTailorResume}
                 isTailoring={am.isTailoring}
-                handleUploadClick={am.handleUploadClick}
-                isUploading={am.isUploading}
-                fileInputRef={am.fileInputRef}
-                handleFileChange={am.handleFileChange}
                 isSending={am.isSending}
                 hasGmailConfig={am.hasGmailConfig}
                 handleSendEmail={am.handleSendEmail}
@@ -179,6 +175,8 @@ function HomeContent() {
         isSavingSettings={am.isSavingSettings}
         handleSaveSettings={am.handleSaveSettings}
         syncStatus={am.syncStatus}
+        isCompilingBase={am.isCompilingBase}
+        handleCompileBaseResume={am.handleCompileBaseResume}
       />
     </div>
   );

@@ -5,7 +5,9 @@ export default function SettingsDrawer({
   setSettings,
   isSavingSettings,
   handleSaveSettings,
-  syncStatus = { isCloud: false, storageType: "local_file" }
+  syncStatus = { isCloud: false, storageType: "local_file" },
+  isCompilingBase = false,
+  handleCompileBaseResume
 }) {
 
   return (
@@ -14,7 +16,7 @@ export default function SettingsDrawer({
       
       <div className={`settings-drawer ${settingsOpen ? "open" : ""}`}>
         <div className="drawer-header">
-          <h2>Configuration Settings</h2>
+          <h2>Settings</h2>
           <button className="close-btn" onClick={() => setSettingsOpen(false)}>×</button>
         </div>
 
@@ -22,38 +24,35 @@ export default function SettingsDrawer({
           
           <div className="form-group">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-              <label style={{ margin: 0 }}>Gemini API Key</label>
+              <label style={{ margin: 0 }}>Gemini API key</label>
               <a
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ fontSize: "0.75rem", color: "var(--accent-cyan)", textDecoration: "none" }}
               >
-                Get free key
+                Get API key
               </a>
             </div>
             <input
               type="password"
-              placeholder={settings?.GEMINI_API_KEY ? "••••••••••••••••••••" : "Paste your Google AI Studio API key"}
+              placeholder={settings?.GEMINI_API_KEY ? "••••••••••••••••••••" : "Paste your Gemini API key"}
               value={settings?.GEMINI_API_KEY || ""}
               onChange={(e) => setSettings({ ...settings, GEMINI_API_KEY: e.target.value })}
               autoComplete="off"
               spellCheck="false"
             />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              Your personal key is stored securely with your profile and used directly for job extraction and resume tailoring with automatic best-model selection.
-            </small>
           </div>
 
           <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)" }} />
 
-          <h3>User Signature Profile</h3>
+          <h3>Signature</h3>
 
           <div className="form-group">
-            <label>Your Full Name</label>
+            <label>Name</label>
             <input
               type="text"
-              placeholder="John Doe"
+              placeholder="Your full name"
               value={settings?.USER_NAME || ""}
               onChange={(e) => setSettings({ ...settings, USER_NAME: e.target.value })}
               required
@@ -61,7 +60,7 @@ export default function SettingsDrawer({
           </div>
 
           <div className="form-group">
-            <label>Phone Number</label>
+            <label>Phone</label>
             <input
               type="text"
               placeholder="+1 (555) 000-0000"
@@ -72,10 +71,10 @@ export default function SettingsDrawer({
           </div>
 
           <div className="form-group">
-            <label>LinkedIn Profile URL</label>
+            <label>LinkedIn</label>
             <input
               type="text"
-              placeholder="linkedin.com/in/user"
+              placeholder="https://linkedin.com/in/username"
               value={settings?.USER_LINKEDIN || ""}
               onChange={(e) => setSettings({ ...settings, USER_LINKEDIN: e.target.value })}
               required
@@ -83,20 +82,20 @@ export default function SettingsDrawer({
           </div>
 
           <div className="form-group">
-            <label>GitHub Profile URL</label>
+            <label>GitHub</label>
             <input
               type="text"
-              placeholder="github.com/user"
+              placeholder="https://github.com/username"
               value={settings?.USER_GITHUB || ""}
               onChange={(e) => setSettings({ ...settings, USER_GITHUB: e.target.value })}
             />
           </div>
 
           <div className="form-group">
-            <label>Portfolio Website</label>
+            <label>Portfolio</label>
             <input
               type="text"
-              placeholder="portfolio.com"
+              placeholder="https://yourportfolio.com"
               value={settings?.USER_PORTFOLIO || ""}
               onChange={(e) => setSettings({ ...settings, USER_PORTFOLIO: e.target.value })}
             />
@@ -104,10 +103,10 @@ export default function SettingsDrawer({
 
           <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", marginTop: "1rem", marginBottom: "0.5rem" }} />
 
-          <h3>Email Styling Preferences</h3>
+          <h3>Email</h3>
 
           <div className="form-group">
-            <label>Default Font Style</label>
+            <label>Font</label>
             <select
               value={settings?.EMAIL_FONT_FAMILY || "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"}
               onChange={(e) => setSettings({ ...settings, EMAIL_FONT_FAMILY: e.target.value })}
@@ -122,7 +121,7 @@ export default function SettingsDrawer({
           </div>
 
           <div className="form-group">
-            <label>Default Font Size</label>
+            <label>Font size</label>
             <select
               value={settings?.EMAIL_FONT_SIZE || "15px"}
               onChange={(e) => setSettings({ ...settings, EMAIL_FONT_SIZE: e.target.value })}
@@ -137,12 +136,62 @@ export default function SettingsDrawer({
 
           <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", marginTop: "1rem", marginBottom: "0.5rem" }} />
           
-          <h3>Resume Configuration</h3>
+          <h3>Resume</h3>
 
           <div className="form-group">
-            <label>Base LaTeX Resume Code</label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+              <label style={{ margin: 0 }}>LaTeX template</label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {!settings?.LATEX_RESUME && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }}
+                    onClick={() => {
+                      const sampleTemplate = `\\documentclass[letterpaper,10pt]{article}
+\\usepackage[left=0.75in,top=0.6in,right=0.75in,bottom=0.6in]{geometry}
+\\usepackage{hyperref}
+\\usepackage{enumitem}
+
+\\begin{document}
+\\begin{center}
+  {\\LARGE \\textbf{{{USER_NAME}}}}\\\\
+  \\vspace{2pt}
+  \\small {{USER_PHONE}} $|$ \\href{mailto:{{USER_EMAIL}}}{{USER_EMAIL}} $|$ \\href{{{USER_LINKEDIN}}}{LinkedIn} $|$ \\href{{{USER_GITHUB}}}{GitHub}
+\\end{center}
+
+\\section*{Experience}
+\\textbf{Software Engineer} -- Tech Corp \\hfill 2022 -- Present\\\\
+\\begin{itemize}[noitemsep,topsep=0pt]
+  \\item Developed and deployed scalable full-stack web applications.
+  \\item Improved API latency by 35% through query optimization and caching.
+\\end{itemize}
+
+\\section*{Skills}
+\\textbf{Languages \\& Frameworks:} JavaScript, TypeScript, React, Next.js, Node.js, Python, PostgreSQL.
+
+\\end{document}`;
+                      setSettings({ ...settings, LATEX_RESUME: sampleTemplate });
+                    }}
+                  >
+                    Insert template
+                  </button>
+                )}
+                {handleCompileBaseResume && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }}
+                    onClick={handleCompileBaseResume}
+                    disabled={isCompilingBase || !settings?.LATEX_RESUME?.trim()}
+                  >
+                    {isCompilingBase ? "Compiling..." : "Compile PDF"}
+                  </button>
+                )}
+              </div>
+            </div>
             <textarea
-              style={{ flexGrow: 1, minHeight: "150px", fontFamily: "var(--font-mono)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)", background: "var(--bg-primary)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+              style={{ flexGrow: 1, minHeight: "170px", fontFamily: "var(--font-mono)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)", background: "var(--bg-primary)", color: "var(--text-primary)", fontSize: "0.85rem" }}
               placeholder="\documentclass{article}..."
               value={settings?.LATEX_RESUME || ""}
               onChange={(e) => setSettings({ ...settings, LATEX_RESUME: e.target.value })}
@@ -150,7 +199,7 @@ export default function SettingsDrawer({
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem", minHeight: "44px" }} disabled={isSavingSettings}>
-            {isSavingSettings ? "Saving..." : "Save Settings"}
+            {isSavingSettings ? "Saving..." : "Save"}
           </button>
         </form>
       </div>

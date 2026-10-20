@@ -102,10 +102,12 @@ export function useOutlio() {
     setIsUploading: resumeState.setIsUploading,
     isTailoring: resumeState.isTailoring,
     setIsTailoring: resumeState.setIsTailoring,
+    isCompilingBase: resumeState.isCompilingBase,
     fileInputRef: resumeState.fileInputRef,
     handleUploadClick: resumeState.handleUploadClick,
     handleFileChange: resumeState.handleFileChange,
     handleTailorResume: resumeState.handleTailorResume,
+    handleCompileBaseResume: resumeState.handleCompileBaseResume,
 
     // Email outreach
     subject: outreachState.subject,
