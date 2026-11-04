@@ -42,4 +42,3 @@ next-env.d.ts
 
 # local persistent storage
 local_kv.json
-.whatsapp_auth
