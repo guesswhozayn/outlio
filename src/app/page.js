@@ -2,13 +2,13 @@
 
 import { Suspense } from "react";
 import { useTheme } from "next-themes";
-import { signIn } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import JobInput from "@/components/JobInput";
 import SettingsDrawer from "@/components/SettingsDrawer";
 import ExtractedFieldsTab from "@/components/ExtractedFieldsTab";
 import HistoryTab from "@/components/HistoryTab";
 import EmailPreviewTab from "@/components/EmailPreviewTab";
+import LandingPage from "@/components/LandingPage";
 import { useOutlio } from "@/hooks/useOutlio";
 
 import { ArrowLeftRight } from "lucide-react";
@@ -19,9 +19,19 @@ function HomeContent() {
 
   if (am.status === "loading") {
     return (
-      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100dvh' }}>
         <div className="spinner spinner-lg"></div>
       </div>
+    );
+  }
+
+  if (am.status === "unauthenticated") {
+    return (
+      <LandingPage
+        mounted={am.mounted}
+        theme={theme}
+        setTheme={setTheme}
+      />
     );
   }
 
@@ -38,39 +48,6 @@ function HomeContent() {
       />
 
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        {am.status === "unauthenticated" && (
-          <div
-            className="preview-banner"
-            style={{
-              padding: "0.75rem 1.25rem",
-              marginBottom: "1.25rem",
-              borderRadius: "var(--radius-md)",
-              background: "var(--bg-secondary)",
-              border: "1px solid var(--glass-border)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "1rem",
-              boxShadow: "var(--shadow-sm)",
-            }}
-          >
-            <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
-              Sign in with Google to extract jobs, optimize resumes, and send applications.
-            </span>
-            <button
-              className="btn btn-primary"
-              onClick={() => signIn("google")}
-              style={{
-                padding: "0.4rem 0.9rem",
-                fontSize: "0.85rem",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-              }}
-            >
-              Sign In with Google
-            </button>
-          </div>
-        )}
 
         {isInputMode ? (
           <JobInput
