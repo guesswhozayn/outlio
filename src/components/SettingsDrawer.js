@@ -37,9 +37,9 @@ export default function SettingsDrawer({
           <div className="drawer-content">
             <div className="form-group">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-                <label style={{ margin: 0 }}>Gemini API key</label>
+                <label style={{ margin: 0 }}>OpenRouter API key</label>
                 <a
-                  href="https://aistudio.google.com/app/apikey"
+                  href="https://openrouter.ai/settings/keys"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ fontSize: "0.75rem", color: "var(--accent-cyan)", textDecoration: "none" }}
@@ -49,9 +49,9 @@ export default function SettingsDrawer({
               </div>
               <input
                 type="password"
-                placeholder={settings?.GEMINI_API_KEY ? "••••••••••••••••••••" : "Paste your Gemini API key"}
-                value={settings?.GEMINI_API_KEY || ""}
-                onChange={(e) => setSettings({ ...settings, GEMINI_API_KEY: e.target.value })}
+                placeholder={settings?.OPENROUTER_API_KEY ? "••••••••••••••••••••" : "Paste your OpenRouter API key"}
+                value={settings?.OPENROUTER_API_KEY || ""}
+                onChange={(e) => setSettings({ ...settings, OPENROUTER_API_KEY: e.target.value })}
                 autoComplete="off"
                 spellCheck="false"
               />

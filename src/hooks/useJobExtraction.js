@@ -69,8 +69,8 @@ export function useJobExtraction({
           postText: textToParse,
           image: base64Image,
           mimeType,
-          model: overrideModel || settingsRef.current.MODEL || "gemini-3.8-flash",
-          apiKey: settingsRef.current.GEMINI_API_KEY,
+          model: overrideModel || settingsRef.current.MODEL || "openrouter/free",
+          apiKey: settingsRef.current.OPENROUTER_API_KEY,
         }),
       });
 
@@ -94,7 +94,7 @@ export function useJobExtraction({
       addLog("Job details extracted successfully!", "success");
     } catch (error) {
       addLog(`Error parsing post: ${error.message}`, "error");
-      if (error.message?.includes("Gemini API key")) {
+      if (error.message?.includes("OpenRouter API key")) {
         setSettingsOpen(true);
       }
     } finally {

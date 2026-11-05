@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { generateGeminiContent, extractJson, DEFAULT_MODEL } from '@/lib/gemini';
+import { generateOpenRouterContent, extractJson, DEFAULT_MODEL } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
@@ -43,14 +43,13 @@ ${postText || "(See attached image)"}
 
     const systemInstruction = "You are an expert AI parser that extracts structured information from job posts and LinkedIn listings. You MUST return strictly a raw, valid JSON object matching the requested schema. Do not enclose in markdown ticks if possible, and do not provide any explanation outside the JSON.";
 
-    const rawResponse = await generateGeminiContent({
+    const rawResponse = await generateOpenRouterContent({
       apiKey: userApiKey,
       model: selectedModel,
       prompt,
       systemInstruction,
       image,
       mimeType,
-      responseJson: true,
     });
 
     const parsedData = extractJson(rawResponse);

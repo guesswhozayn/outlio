@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { generateGeminiContent, DEFAULT_MODEL } from '@/lib/gemini';
+import { generateOpenRouterContent, DEFAULT_MODEL } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
@@ -44,7 +44,7 @@ Base LaTeX Resume:
 ${latexCode}
 `;
 
-    let responseText = await generateGeminiContent({
+    let responseText = await generateOpenRouterContent({
       apiKey: userApiKey,
       model: selectedModel,
       prompt,

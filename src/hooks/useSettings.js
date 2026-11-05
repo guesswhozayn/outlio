@@ -3,8 +3,8 @@ import localforage from "localforage";
 import { signIn } from "next-auth/react";
 
 export const INITIAL_SETTINGS = {
-  GEMINI_API_KEY: "",
-  MODEL: "gemini-3.8-flash",
+  OPENROUTER_API_KEY: "",
+  MODEL: "openrouter/free",
   USER_NAME: "",
   USER_PHONE: "",
   USER_LINKEDIN: "",
@@ -83,9 +83,9 @@ export function useSettings({ session, status, addLog, onLatexUpdated }) {
         }
       }
 
-      let savedModel = finalSettings.MODEL || finalSettings.GEMINI_MODEL || "gemini-3.8-flash";
-      if (typeof savedModel !== "string" || !savedModel.startsWith("gemini") || savedModel.includes("gemini-2.0")) {
-        savedModel = "gemini-3.8-flash";
+      let savedModel = finalSettings.MODEL || "openrouter/free";
+      if (typeof savedModel !== "string" || !savedModel.includes("/")) {
+        savedModel = "openrouter/free";
       }
       finalSettings.MODEL = savedModel;
       if (!finalSettings.USER_NAME && session?.user?.name) {

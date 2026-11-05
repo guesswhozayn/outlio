@@ -1,6 +1,6 @@
 # Outlio
 
-Outlio is a streamlined, AI-powered job application outreach and resume tailoring assistant built with Next.js 16 (App Router), React 19, and Google Gemini API. It automates the workflow of extracting job requirements from posts or screenshots, tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching concise cold outreach emails directly through your connected Gmail account.
+Outlio is a streamlined, AI-powered job application outreach and resume tailoring assistant built with Next.js 16 (App Router), React 19, and OpenRouter API. It automates the workflow of extracting job requirements from posts or screenshots, tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching concise cold outreach emails directly through your connected Gmail account.
 
 ---
 
@@ -56,7 +56,7 @@ outlio/
     │   └── api/               # Serverless API routes
     │       ├── auth/          # NextAuth OAuth handler ([...nextauth])
     │       ├── latex/         # LaTeX-to-PDF compilation service
-    │       ├── models/        # Gemini model discovery endpoint
+    │       ├── models/        # OpenRouter model discovery endpoint
     │       ├── parse/         # Multimodal LLM job extractor
     │       ├── resume/        # AI resume customization engine
     │       ├── send/          # Gmail REST API email dispatcher
@@ -73,13 +73,13 @@ outlio/
     │   └── SettingsDrawer.js  # Signature profile & LaTeX resume settings
     ├── hooks/                 # Custom React hooks
     │   ├── useOutlio.js       # Main orchestrator hook
-    │   ├── useSettings.js     # User signature profile & Gemini model discovery
+    │   ├── useSettings.js     # User signature profile & settings management
     │   ├── useJobExtraction.js# Job post parsing & screenshot analysis
     │   ├── useResumeTailoring.js # LaTeX tailoring & ATS PDF compiling
     │   └── useEmailOutreach.js# Email preview, Gmail dispatch & history
     └── lib/                   # Utility helpers
         ├── auth.js            # NextAuth configuration with Gmail OAuth scopes
-        └── gemini.js          # Google Gemini API client & fallback models
+        └── openrouter.js      # OpenRouter API client & free model routing
 ```
 
 ---
@@ -89,12 +89,12 @@ outlio/
 ### Multimodal Job Extraction
 
 - **Text & Screenshot Intake**: Paste raw job post text or upload listing screenshots for AI extraction.
-- **Structured Parsing**: Automatically extracts recruiter email, position title, company name, hiring manager name, core tech stack, and key requirements using the latest Gemini models (e.g., `gemini-3.8-flash`, `gemini-3.5-flash`).
+- **Structured Parsing**: Automatically extracts recruiter email, position title, company name, hiring manager name, core tech stack, and key requirements using OpenRouter models (`openrouter/free`).
 
 ### Bring Your Own Key (BYOK) Architecture
 
-- **User-Managed API Keys**: Users enter their own Google AI Studio Gemini API key directly in **Configuration Settings**, eliminating hardcoded dependencies or shared quotas.
-- **Dynamic Model Discovery**: Outlio queries available models directly from Google's Generative Language API using the user's key.
+- **User-Managed API Keys**: Users enter their own OpenRouter API key directly in **Settings**, eliminating hardcoded dependencies or shared quotas.
+- **Dynamic Free Model Discovery**: Outlio queries available free models directly from OpenRouter's API and routes requests automatically.
 
 ### Dynamic LaTeX Resume Tailoring & PDF Compilation
 
@@ -118,7 +118,7 @@ outlio/
 ### Hybrid Browser & Cloud Persistence
 
 - **Client Storage (`localforage`)**: PDF resumes and history logs persist securely in browser IndexedDB.
-- **Settings Persistence**: User signature details, Gemini API keys, and LaTeX templates persist across devices via Supabase in production, and via `local_kv.json` during local development.
+- **Settings Persistence**: User signature details, OpenRouter API keys, and LaTeX templates persist across devices via Supabase in production, and via `local_kv.json` during local development.
 
 ---
 
@@ -128,7 +128,7 @@ outlio/
 - **Core**: [React 19.2](https://react.dev/), JavaScript
 - **Styling**: Vanilla CSS Design System with dark/light themes & glassmorphism
 - **Auth & API**: [NextAuth 4.24](https://next-auth.js.org/) with Google OAuth & Gmail REST API
-- **AI Engine**: [Google Gemini API](https://ai.google.dev/) (BYOK architecture, latest Gemini 3.x models)
+- **AI Engine**: [OpenRouter API](https://openrouter.ai/) (BYOK architecture, multimodal vision & text LLMs)
 - **Storage / Cloud Sync**: [Supabase](https://supabase.com/) (`@supabase/supabase-js`)
 - **Icons**: [Lucide React](https://lucide.dev/)
 
@@ -144,8 +144,8 @@ NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
-# Optional: Server-side default Gemini API key (users can also provide their own key in Settings via BYOK)
-GEMINI_API_KEY=""
+# Optional: Server-side default OpenRouter API key (users can also provide their own key in Settings via BYOK)
+OPENROUTER_API_KEY=""
 
 # Optional: Cloud persistence across devices via Supabase
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"

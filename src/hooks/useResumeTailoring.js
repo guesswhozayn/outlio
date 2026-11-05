@@ -168,8 +168,8 @@ export function useResumeTailoring({
         body: JSON.stringify({
           latexCode: tailoredLatexTemplate,
           jobDescription: postText || fields.comprehensiveSkills || fields.skills || "Software Engineering Role",
-          model: settings.MODEL || "gemini-3.8-flash",
-          apiKey: settings.GEMINI_API_KEY,
+          model: settings.MODEL || "openrouter/free",
+          apiKey: settings.OPENROUTER_API_KEY,
         }),
       });
       const tailorData = await tailorRes.json();
@@ -198,7 +198,7 @@ export function useResumeTailoring({
       addLog("Optimized resume generated and attached successfully!", "success");
     } catch (error) {
       addLog(`Error optimizing resume: ${error.message}`, "error");
-      if (error.message?.includes("Gemini API key")) {
+      if (error.message?.includes("OpenRouter API key")) {
         setSettingsOpen(true);
       }
     } finally {
