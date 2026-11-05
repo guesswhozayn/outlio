@@ -35,30 +35,6 @@ export default function SettingsDrawer({
 
         <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
           <div className="drawer-content">
-            <div className="form-group">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-                <label style={{ margin: 0 }}>OpenRouter API key</label>
-                <a
-                  href="https://openrouter.ai/settings/keys"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: "0.75rem", color: "var(--accent-cyan)", textDecoration: "none" }}
-                >
-                  Get API key
-                </a>
-              </div>
-              <input
-                type="password"
-                placeholder={settings?.OPENROUTER_API_KEY ? "••••••••••••••••••••" : "Paste your OpenRouter API key"}
-                value={settings?.OPENROUTER_API_KEY || ""}
-                onChange={(e) => setSettings({ ...settings, OPENROUTER_API_KEY: e.target.value })}
-                autoComplete="off"
-                spellCheck="false"
-              />
-            </div>
-
-            <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)" }} />
-
             <h3>Signature</h3>
 
             <div className="form-group">

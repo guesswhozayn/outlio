@@ -32,7 +32,6 @@ export function useOutlio() {
   const extractionState = useJobExtraction({
     status,
     settingsRef: settingsState.settingsRef,
-    setSettingsOpen: settingsState.setSettingsOpen,
     setActiveTab,
     setViewMode,
     setIsManuallyEdited: (val) => outreachState.setIsManuallyEdited(val),
@@ -46,7 +45,6 @@ export function useOutlio() {
     settings: settingsState.settings,
     fields: extractionState.fields,
     postText: extractionState.postText,
-    setSettingsOpen: settingsState.setSettingsOpen,
     addLog,
   });
 

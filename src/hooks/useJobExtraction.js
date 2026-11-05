@@ -4,7 +4,6 @@ import { signIn } from "next-auth/react";
 export function useJobExtraction({
   status,
   settingsRef,
-  setSettingsOpen,
   setActiveTab,
   setViewMode,
   setIsManuallyEdited,
@@ -70,7 +69,6 @@ export function useJobExtraction({
           image: base64Image,
           mimeType,
           model: overrideModel || settingsRef.current.MODEL || "openrouter/free",
-          apiKey: settingsRef.current.OPENROUTER_API_KEY,
         }),
       });
 
@@ -94,13 +92,10 @@ export function useJobExtraction({
       addLog("Job details extracted successfully!", "success");
     } catch (error) {
       addLog(`Error parsing post: ${error.message}`, "error");
-      if (error.message?.includes("OpenRouter API key")) {
-        setSettingsOpen(true);
-      }
     } finally {
       setIsParsing(false);
     }
-  }, [postText, screenshotData, addLog, status, settingsRef, setIsManuallyEdited, setIsFollowUp, setActiveTab, setViewMode, setSettingsOpen]);
+  }, [postText, screenshotData, addLog, status, settingsRef, setIsManuallyEdited, setIsFollowUp, setActiveTab, setViewMode]);
 
   const clearFields = useCallback(() => {
     setPostText("");

@@ -108,9 +108,9 @@ const WORKFLOW_CARDS = [
 const ARCHITECTURE_ITEMS = [
   {
     icon: KeyRound,
-    title: "Bring your own OpenRouter key",
+    title: "Multi-model OpenRouter AI",
     description:
-      "Use your own OpenRouter API key with automatic routing across available free models with no subscription or shared rate limits.",
+      "Automatic routing across vision and text models extracts job details from posts or screenshots and tailors your resume.",
   },
   {
     icon: MailCheck,
@@ -224,10 +224,7 @@ export default function LandingPage({ mounted, theme, setTheme }) {
         <>
           <main className="landing-main">
             <section className="hero-section" aria-labelledby="hero-heading">
-              <div className="hero-badge">
-                <span className="hero-badge-dot" aria-hidden="true" />
-                <span>OpenRouter BYOK · LaTeX to PDF · Gmail API</span>
-              </div>
+
 
               <h1 id="hero-heading" className="hero-title">
                 Turn job posts into tailored applications in seconds.
@@ -362,7 +359,7 @@ export default function LandingPage({ mounted, theme, setTheme }) {
                   Ready to send your next application?
                 </h2>
                 <p className="cta-desc">
-                  Sign in with Google to connect Gmail, add your OpenRouter API key, and compile
+                  Sign in with Google to connect Gmail, paste your master LaTeX template, and compile
                   your first tailored resume.
                 </p>
               </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { generateOpenRouterContent, DEFAULT_MODEL } from '@/lib/openrouter';
+import { generateOpenRouterContent } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
@@ -10,14 +10,12 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { latexCode, jobDescription, model, apiKey } = await req.json();
+    const { latexCode, jobDescription, apiKey } = await req.json();
     const userApiKey = apiKey || req.headers.get('x-api-key');
 
     if (!latexCode) {
       return NextResponse.json({ error: "No base LaTeX resume provided." }, { status: 400 });
     }
-
-    const selectedModel = model || DEFAULT_MODEL;
 
     const systemInstruction = "You are an expert career coach and LaTeX developer. You strictly return valid LaTeX code without any markdown code blocks, explanations, or commentary.";
 
@@ -46,7 +44,6 @@ ${latexCode}
 
     let responseText = await generateOpenRouterContent({
       apiKey: userApiKey,
-      model: selectedModel,
       prompt,
       systemInstruction,
     });

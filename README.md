@@ -56,7 +56,6 @@ outlio/
     │   └── api/               # Serverless API routes
     │       ├── auth/          # NextAuth OAuth handler ([...nextauth])
     │       ├── latex/         # LaTeX-to-PDF compilation service
-    │       ├── models/        # OpenRouter model discovery endpoint
     │       ├── parse/         # Multimodal LLM job extractor
     │       ├── resume/        # AI resume customization engine
     │       ├── send/          # Gmail REST API email dispatcher

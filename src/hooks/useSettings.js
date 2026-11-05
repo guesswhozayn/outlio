@@ -3,7 +3,6 @@ import localforage from "localforage";
 import { signIn } from "next-auth/react";
 
 export const INITIAL_SETTINGS = {
-  OPENROUTER_API_KEY: "",
   MODEL: "openrouter/free",
   USER_NAME: "",
   USER_PHONE: "",

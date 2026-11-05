@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { generateOpenRouterContent, extractJson, DEFAULT_MODEL } from '@/lib/openrouter';
+import { generateOpenRouterContent, extractJson } from '@/lib/openrouter';
 
 export async function POST(req) {
   try {
@@ -10,10 +10,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { postText, image, mimeType, model, apiKey } = await req.json();
+    const { postText, image, mimeType, apiKey } = await req.json();
     const userApiKey = apiKey || req.headers.get('x-api-key');
-
-    const selectedModel = model || DEFAULT_MODEL;
 
     const prompt = `
 Analyze the following LinkedIn post or job description. Extract the following information:
@@ -45,7 +43,6 @@ ${postText || "(See attached image)"}
 
     const rawResponse = await generateOpenRouterContent({
       apiKey: userApiKey,
-      model: selectedModel,
       prompt,
       systemInstruction,
       image,
