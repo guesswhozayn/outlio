@@ -1,15 +1,17 @@
 "use client";
 
-import { Settings, Sun, Moon, LogOut, LogIn } from "lucide-react";
-import { signOut, signIn } from "next-auth/react";
+import { Settings, Sun, Moon } from "lucide-react";
 import OutlioLogo from "./OutlioLogo";
 
-export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, session }) {
-  const user = session?.user;
-
+export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, onReturnToLanding }) {
   return (
     <header className="floating-nav">
-      <div className="logo-section">
+      <div
+        className="logo-section"
+        style={{ cursor: onReturnToLanding ? "pointer" : "default" }}
+        onClick={onReturnToLanding}
+        title={onReturnToLanding ? "Return to home page" : ""}
+      >
         <OutlioLogo size={32} bg="#000000" shape="circle" />
         <div>
           <h1 className="nav-title">Outlio</h1>
@@ -35,36 +37,6 @@ export default function Navbar({ mounted, theme, setTheme, setSettingsOpen, sess
         >
           <Settings size={18} />
         </button>
-
-        {user ? (
-          <button
-            className="icon-btn"
-            onClick={() => signOut({ callbackUrl: "/" })}
-            title={`Sign Out (${user.email || 'User'})`}
-            aria-label="Sign Out"
-            style={{
-              color: "var(--accent-rose)",
-            }}
-          >
-            <LogOut size={18} />
-          </button>
-        ) : (
-          <button
-            className="btn btn-primary"
-            onClick={() => signIn("google")}
-            style={{
-              padding: "0.35rem 0.75rem",
-              fontSize: "0.825rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.35rem",
-              borderRadius: "var(--radius-sm)",
-            }}
-          >
-            <LogIn size={15} />
-            <span>Sign In</span>
-          </button>
-        )}
       </div>
     </header>
   );

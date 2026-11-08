@@ -1,182 +1,144 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import nodemailer from 'nodemailer';
 import { getSupabaseClient } from '@/lib/supabase';
-import fs from 'fs';
-import path from 'path';
+import { encryptPayload, decryptPayload } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
 
-const getLocalKvPath = () => {
-  try {
-    fs.accessSync(process.cwd(), fs.constants.W_OK);
-    return path.join(process.cwd(), 'local_kv.json');
-  } catch {
-    return path.join('/tmp', 'local_kv.json');
-  }
-};
-
-const LOCAL_KV_PATH = getLocalKvPath();
-
-async function getLocalSettings(email) {
-  try {
-    if (!fs.existsSync(LOCAL_KV_PATH)) {
-      return null;
-    }
-    const data = fs.readFileSync(LOCAL_KV_PATH, 'utf8');
-    const parsed = JSON.parse(data);
-    return parsed[`settings:${email}`] || null;
-  } catch {
-    return null;
-  }
+async function verifyCredentials(user, pass) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass }
+  });
+  await transporter.verify();
 }
 
-async function setLocalSettings(email, settings) {
-  let data = {};
-  try {
-    if (fs.existsSync(LOCAL_KV_PATH)) {
-      const fileData = fs.readFileSync(LOCAL_KV_PATH, 'utf8');
-      data = JSON.parse(fileData);
-    }
-  } catch {
+function normalizeAuthError(err) {
+  const msg = err?.message || '';
+  if (err?.code === 'EAUTH' || msg.includes('Username and Password not accepted') || msg.includes('Invalid login')) {
+    return 'Invalid Gmail credentials. Ensure 2-Step Verification is enabled on your Google account and use a 16-character App Password (not your personal password).';
   }
-  
-  data[`settings:${email}`] = settings;
-  fs.writeFileSync(LOCAL_KV_PATH, JSON.stringify(data, null, 2));
-}
-
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const email = session.user.email?.toLowerCase().trim();
-    if (!email) {
-      return NextResponse.json({ error: "No email associated with session" }, { status: 400 });
-    }
-    const supabase = getSupabaseClient();
-    let settings = null;
-    let storageType = 'local_file';
-
-    if (supabase) {
-      try {
-        const { data: record, error: sbError } = await supabase
-          .from('user_settings')
-          .select('settings')
-          .eq('email', email)
-          .maybeSingle();
-
-        if (!sbError) {
-          if (record && record.settings) {
-            settings = record.settings;
-          }
-          storageType = 'supabase';
-        } else {
-          console.error("Supabase get failed, falling back to local:", sbError);
-          settings = await getLocalSettings(email);
-          storageType = 'local_fallback';
-        }
-      } catch (err) {
-        console.error("Supabase query exception, falling back to local:", err);
-        settings = await getLocalSettings(email);
-        storageType = 'local_fallback';
-      }
-    } else {
-      settings = await getLocalSettings(email);
-      storageType = LOCAL_KV_PATH.startsWith('/tmp') ? 'ephemeral' : 'local_file';
-    }
-
-    let cleanSettings = {};
-    if (settings) {
-      if (typeof settings === 'string') {
-        try {
-          cleanSettings = JSON.parse(settings);
-        } catch {
-          cleanSettings = {};
-        }
-      } else if (typeof settings === 'object') {
-        cleanSettings = { ...settings };
-      }
-    }
-    delete cleanSettings._sync;
-
-    const isCloud = storageType === 'supabase';
-
-    return NextResponse.json({
-      ...cleanSettings,
-      _sync: {
-        isCloud,
-        storageType,
-      }
-    }, {
-      headers: {
-        'x-storage-backend': storageType,
-      }
-    });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  return msg || 'Gmail authentication failed. Please check your address and App Password.';
 }
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const body = await req.json();
+    const action = body.action || 'save';
+    
+    const settingsPayload = body.settings || {};
+    const gmailUser = (
+      body.GMAIL_USER ||
+      body.gmailUser ||
+      settingsPayload.GMAIL_USER ||
+      ''
+    ).toLowerCase().trim();
+
+    const gmailAppPassword = (
+      body.GMAIL_APP_PASSWORD ||
+      body.gmailAppPassword ||
+      settingsPayload.GMAIL_APP_PASSWORD ||
+      ''
+    ).replace(/\s+/g, '');
+
+    if (!gmailUser || !gmailAppPassword) {
+      return NextResponse.json(
+        { error: 'Gmail address and 16-character App Password are required.' },
+        { status: 401 }
+      );
     }
 
-    const email = session.user.email?.toLowerCase().trim();
-    if (!email) {
-      return NextResponse.json({ error: "No email associated with session" }, { status: 400 });
+    try {
+      await verifyCredentials(gmailUser, gmailAppPassword);
+    } catch (authErr) {
+      return NextResponse.json(
+        { error: normalizeAuthError(authErr) },
+        { status: 401 }
+      );
     }
-    const data = await req.json();
 
-    const toSave = { ...data };
-    delete toSave._sync;
+    if (action === 'verify') {
+      return NextResponse.json({ success: true, verified: true });
+    }
 
     const supabase = getSupabaseClient();
-    let storageType = 'local_file';
-
-    if (supabase) {
-      try {
-        const { error: sbError } = await supabase
-          .from('user_settings')
-          .upsert({
-            email,
-            settings: toSave,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'email' });
-
-        if (!sbError) {
-          storageType = 'supabase';
-        } else {
-          console.error("Supabase upsert failed, falling back to local:", sbError);
-          await setLocalSettings(email, toSave);
-          storageType = 'local_fallback';
-        }
-      } catch (err) {
-        console.error("Supabase upsert exception, falling back to local:", err);
-        await setLocalSettings(email, toSave);
-        storageType = 'local_fallback';
-      }
-    } else {
-      await setLocalSettings(email, toSave);
-      storageType = LOCAL_KV_PATH.startsWith('/tmp') ? 'ephemeral' : 'local_file';
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database service unavailable. Supabase configuration missing.' },
+        { status: 503 }
+      );
     }
 
-    const isCloud = storageType === 'supabase';
+    if (action === 'fetch') {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('settings, updated_at')
+        .eq('email', gmailUser)
+        .maybeSingle();
 
-    return NextResponse.json({
-      success: true,
-      isCloud,
-      storageType,
-    }, {
-      headers: {
-        'x-storage-backend': storageType,
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
-    });
+
+      if (!data || !data.settings) {
+        return NextResponse.json({ found: false, settings: null });
+      }
+
+      let userSettings = null;
+      const rawSettings = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
+
+      if (rawSettings?.__encrypted) {
+        try {
+          userSettings = decryptPayload(rawSettings, gmailAppPassword);
+        } catch {
+          return NextResponse.json(
+            { error: 'Failed to decrypt settings with this App Password. Did you regenerate your App Password?' },
+            { status: 400 }
+          );
+        }
+      } else {
+        userSettings = rawSettings;
+      }
+
+      delete userSettings?.GMAIL_APP_PASSWORD;
+
+      return NextResponse.json({
+        found: true,
+        settings: userSettings,
+        updated_at: data.updated_at
+      });
+    }
+
+    if (action === 'save') {
+      const toSave = { ...(body.settings || body), GMAIL_USER: gmailUser };
+      delete toSave.GMAIL_APP_PASSWORD;
+      delete toSave.action;
+      delete toSave.gmailUser;
+      delete toSave.gmailAppPassword;
+      delete toSave._sync;
+
+      const encrypted = encryptPayload(toSave, gmailAppPassword);
+      const payloadToStore = {
+        __encrypted: true,
+        ...encrypted,
+      };
+
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          email: gmailUser,
+          settings: payloadToStore,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'email' });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, saved: true });
+    }
+
+    return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

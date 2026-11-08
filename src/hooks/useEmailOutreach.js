@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import localforage from "localforage";
-import { signIn } from "next-auth/react";
 import { textToHtml } from "@/lib/emailFormatter";
+import { validateSettings } from "./useSettings";
 
 const fileToBase64 = async (fileOrBlob) => {
   if (!fileOrBlob) return null;
@@ -20,8 +20,6 @@ const fileToBase64 = async (fileOrBlob) => {
 };
 
 export function useEmailOutreach({
-  session,
-  status,
   settings,
   fields,
   clearFields,
@@ -29,6 +27,7 @@ export function useEmailOutreach({
   resumeFile,
   compileBaseFromLatex,
   resetTailoredToDefault,
+  setSettingsOpen,
   addLog,
 }) {
   const [history, setHistory] = useState([]);
@@ -38,68 +37,58 @@ export function useEmailOutreach({
   const [manualEmailHtml, setManualEmailHtml] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
-  const hasGmailConfig = Boolean(session?.user?.email);
+  const hasGmailConfig = Boolean(settings.GMAIL_USER && settings.GMAIL_APP_PASSWORD);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
     localforage.getItem("outlio_history").then((stored) => {
       if (stored) setHistory(stored);
     }).catch((err) => console.warn("Storage denied for history:", err));
-  }, [status]);
+  }, []);
 
   const compiled = useMemo(() => {
     const pTitle = fields.jobTitle || "[Position Title]";
-    const cName = fields.company || "your company";
+    const cName = fields.company || "[Company Name]";
     const uName = settings.USER_NAME || "[Your Name]";
-    const uPhone = settings.USER_PHONE || "";
-    const uLink = settings.USER_LINKEDIN || "";
+    const recName = fields.recipientName || "Hiring Team";
 
-    const salutation = fields.recipientName && fields.recipientName.toLowerCase() !== "hiring team"
-      ? `Hi ${fields.recipientName},`
-      : "Hi Hiring Team,";
-
-    const contactParts = [];
-    if (uPhone && uPhone !== "[Phone Number]") contactParts.push(uPhone);
-    if (uLink && uLink !== "[LinkedIn Profile]") contactParts.push(uLink);
-    if (settings.USER_GITHUB) contactParts.push(settings.USER_GITHUB);
-    if (settings.USER_PORTFOLIO) contactParts.push(settings.USER_PORTFOLIO);
-    const contactBlock = contactParts.length > 0 ? `\n${contactParts.join(" | ")}` : "";
-
-    if (isFollowUp) {
-      return {
-        subject: `Following up: ${pTitle} – ${uName}`,
-        body: `${salutation}\n\nFollowing up on my application for the ${pTitle} role at ${cName}.\n\nMy resume is re-attached for your convenience. Please let me know if you'd be open to a brief conversation.\n\nBest,\n\n${uName}${contactBlock}`,
-      };
+    let salutation = `Hi ${recName},`;
+    if (!recName || recName === "Hiring Team" || recName === "Hiring Manager" || recName === "Team") {
+      salutation = `Hi ${cName} Hiring Team,`;
     }
 
-    return {
-      subject: `Application for ${pTitle} – ${uName}`,
-      body: `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and would love to apply.\n\nMy resume is attached for your review. Please let me know if you'd be open to a quick chat.\n\nBest,\n\n${uName}${contactBlock}`,
-    };
-  }, [fields, settings, isFollowUp]);
+    let contactBlock = "";
+    if (settings.USER_PORTFOLIO) {
+      contactBlock += `\nPortfolio: ${settings.USER_PORTFOLIO}`;
+    }
+    if (settings.USER_GITHUB) {
+      contactBlock += `\nGitHub: ${settings.USER_GITHUB}`;
+    }
+    if (settings.USER_LINKEDIN) {
+      contactBlock += `\nLinkedIn: ${settings.USER_LINKEDIN}`;
+    }
+    if (settings.USER_PHONE) {
+      contactBlock += `\nPhone: ${settings.USER_PHONE}`;
+    }
+
+    let body = "";
+    let sub = "";
+
+    if (isFollowUp) {
+      body = `${salutation}\n\nFollowing up on my application for the ${pTitle} role at ${cName}.\n\nMy resume is re-attached for your convenience. Please let me know if you'd be open to a brief conversation.\n\nBest,\n\n${uName}${contactBlock}`;
+      sub = `Following up: ${pTitle} – ${uName}`;
+    } else {
+      body = `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and would love to apply.\n\nMy resume is attached for your review. Please let me know if you'd be open to a quick chat.\n\nBest,\n\n${uName}${contactBlock}`;
+      sub = `Application for ${pTitle} – ${uName}`;
+    }
+
+    return { subject: sub, body };
+  }, [fields, isFollowUp, settings]);
 
   const subject = manualSubject !== null ? manualSubject : compiled.subject;
   const emailBody = manualEmailBody !== null ? manualEmailBody : compiled.body;
-  const emailHtml = useMemo(() => {
-    if (manualEmailHtml !== null) return manualEmailHtml;
-    return textToHtml(emailBody, {
-      fontFamily: settings?.EMAIL_FONT_FAMILY,
-      fontSize: settings?.EMAIL_FONT_SIZE,
-    });
-  }, [manualEmailHtml, emailBody, settings?.EMAIL_FONT_FAMILY, settings?.EMAIL_FONT_SIZE]);
-  const isManuallyEdited = manualSubject !== null || manualEmailBody !== null || manualEmailHtml !== null;
+  const emailHtml = manualEmailHtml !== null ? manualEmailHtml : textToHtml(emailBody);
 
-  const setSubject = (val) => {
-    setManualSubject(val);
-  };
-
-  const setEmailBody = (val) => {
-    setManualEmailBody(val);
-  };
-
-  const setEmailHtml = (val) => {
-    setManualEmailHtml(val);
-  };
+  const isManuallyEdited = manualSubject !== null || manualEmailBody !== null;
 
   const handleSetIsManuallyEdited = (val) => {
     if (!val) {
@@ -110,43 +99,51 @@ export function useEmailOutreach({
   };
 
   const handleSendEmail = async () => {
-    if (status === "unauthenticated") {
-      signIn("google");
+    const { isValid, missing } = validateSettings(settings);
+    if (!isValid) {
+      addLog(`Please complete your settings first. Missing: ${missing.join(", ")}`, "error");
+      if (setSettingsOpen) setSettingsOpen(true);
       return;
     }
-    if (!fields.email || !resumeExists || !hasGmailConfig) return;
+
+    if (!fields.email) {
+      addLog("Please specify a recipient email address.", "error");
+      return;
+    }
+
     setIsSending(true);
-    addLog(`Sending application to ${fields.email}...`, "info");
+    addLog("Sending application via Gmail...", "info");
 
     try {
-      let resumeBase64 = null;
-      let resumeFileName = null;
-
       const getCleanFileName = (file) => {
-        const fallback = `${(settings.USER_NAME || "user").trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, "_")}_resume.pdf`;
-        const name = (file?.name || fallback).replace(/[^a-zA-Z0-9._-]/g, "_");
-        return name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
+        const uName = (settings.USER_NAME || "user").trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, "_");
+        const fallbackName = `${uName}_resume.pdf`;
+        if (!file) return fallbackName;
+        const rawName = file.name || fallbackName;
+        const baseName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        return baseName.toLowerCase().endsWith(".pdf") ? baseName : `${baseName}.pdf`;
       };
+
+      let resumeBase64 = null;
+      let resumeFileName = getCleanFileName(resumeFile);
 
       if (resumeFile) {
         resumeBase64 = await fileToBase64(resumeFile);
-        resumeFileName = getCleanFileName(resumeFile);
-      }
-
-      if (!resumeBase64) {
-        const stored = (await localforage.getItem("outlio_tailored_resume")) ||
-          (await localforage.getItem("outlio_base_resume"));
-        if (stored) {
-          resumeBase64 = await fileToBase64(stored);
-          resumeFileName = getCleanFileName(stored);
+      } else if (resumeExists) {
+        let cachedResume = await localforage.getItem("outlio_tailored_resume");
+        if (!cachedResume) {
+          cachedResume = await localforage.getItem("outlio_base_resume");
+        }
+        if (cachedResume) {
+          resumeBase64 = await fileToBase64(cachedResume);
+          resumeFileName = getCleanFileName(cachedResume);
         }
       }
 
-      if (!resumeBase64 && settings?.LATEX_RESUME?.trim() && compileBaseFromLatex) {
-        addLog("Compiling resume attachment from LaTeX...", "info");
-        const freshBlob = await compileBaseFromLatex();
+      if (!resumeBase64 && settings.LATEX_RESUME?.trim() && compileBaseFromLatex) {
+        addLog("Compiling base resume PDF before dispatching...", "info");
+        const freshBlob = await compileBaseFromLatex(settings.LATEX_RESUME);
         if (freshBlob) {
-          await localforage.setItem("outlio_base_resume", freshBlob);
           resumeBase64 = await fileToBase64(freshBlob);
           resumeFileName = getCleanFileName(freshBlob);
         }
@@ -162,6 +159,8 @@ export function useEmailOutreach({
         emailBody,
         emailHtml,
         userName: settings.USER_NAME || "",
+        gmailUser: settings.GMAIL_USER,
+        gmailAppPassword: settings.GMAIL_APP_PASSWORD,
         resumeBase64,
         resumeFileName,
       };
@@ -205,6 +204,10 @@ export function useEmailOutreach({
       setIsSending(false);
     }
   };
+
+  const setSubject = setManualSubject;
+  const setEmailBody = setManualEmailBody;
+  const setEmailHtml = setManualEmailHtml;
 
   return {
     history,

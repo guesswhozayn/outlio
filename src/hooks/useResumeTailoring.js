@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import localforage from "localforage";
-import { signIn } from "next-auth/react";
+import { validateSettings } from "./useSettings";
 
 export function useResumeTailoring({
-  session,
-  status,
   settings,
   fields,
   postText,
+  setSettingsOpen,
   addLog,
 }) {
   const [resumeExists, setResumeExists] = useState(false);
@@ -38,7 +37,7 @@ export function useResumeTailoring({
     const replacements = [
       ["{{USER_NAME}}", settings?.USER_NAME || ""],
       ["{{USER_PHONE}}", settings?.USER_PHONE || ""],
-      ["{{USER_EMAIL}}", session?.user?.email || ""],
+      ["{{USER_EMAIL}}", settings?.GMAIL_USER || ""],
       ["{{USER_LINKEDIN}}", settings?.USER_LINKEDIN || ""],
       ["{{USER_GITHUB}}", settings?.USER_GITHUB || ""],
       ["{{USER_PORTFOLIO}}", settings?.USER_PORTFOLIO || ""],
@@ -62,13 +61,9 @@ export function useResumeTailoring({
     const defaultFileName = (settings?.USER_NAME || "user").trim().toLowerCase().replace(/\s+/g, "_") + "_resume.pdf";
     pdfBlob.name = defaultFileName;
     return pdfBlob;
-  }, [settings, session]);
+  }, [settings]);
 
   const handleCompileBaseResume = async (latexTemplate) => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
     const targetLatex = latexTemplate || settings?.LATEX_RESUME;
     if (!targetLatex?.trim()) {
       addLog("Please enter LaTeX resume code first.", "error");
@@ -93,7 +88,6 @@ export function useResumeTailoring({
   };
 
   useEffect(() => {
-    if (status !== "authenticated") return;
     (async () => {
       try {
         const tailoredResume = await localforage.getItem("outlio_tailored_resume");
@@ -113,15 +107,13 @@ export function useResumeTailoring({
         console.warn("Browser storage access denied for resume:", err);
       }
     })();
-  }, [status, addLog]);
+  }, [addLog]);
 
   const handleTailorResume = async () => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
-    if (!settings.LATEX_RESUME) {
-      addLog("Please provide a base LaTeX resume in settings first.", "error");
+    const { isValid, missing } = validateSettings(settings);
+    if (!isValid) {
+      addLog(`Please complete your settings first. Missing: ${missing.join(", ")}`, "error");
+      if (setSettingsOpen) setSettingsOpen(true);
       return;
     }
 
@@ -151,7 +143,7 @@ export function useResumeTailoring({
       const replacements = [
         ["{{USER_NAME}}", settings.USER_NAME || ""],
         ["{{USER_PHONE}}", settings.USER_PHONE || ""],
-        ["{{USER_EMAIL}}", session?.user?.email || ""],
+        ["{{USER_EMAIL}}", settings.GMAIL_USER || ""],
         ["{{USER_LINKEDIN}}", settings.USER_LINKEDIN || ""],
         ["{{USER_GITHUB}}", settings.USER_GITHUB || ""],
         ["{{USER_PORTFOLIO}}", settings.USER_PORTFOLIO || ""],
@@ -167,7 +159,6 @@ export function useResumeTailoring({
         body: JSON.stringify({
           latexCode: tailoredLatexTemplate,
           jobDescription: postText || fields.comprehensiveSkills || fields.skills || "Software Engineering Role",
-          model: settings.MODEL || "openrouter/free",
         }),
       });
       const tailorData = await tailorRes.json();

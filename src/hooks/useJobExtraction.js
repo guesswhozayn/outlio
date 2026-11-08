@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import { signIn } from "next-auth/react";
+import { validateSettings } from "./useSettings";
 
 export function useJobExtraction({
-  status,
   settingsRef,
+  setSettingsOpen,
   setActiveTab,
   setViewMode,
   setIsManuallyEdited,
@@ -26,10 +26,6 @@ export function useJobExtraction({
   const imageInputRef = useRef(null);
 
   const handleImageUploadClick = () => {
-    if (status === "unauthenticated") {
-      signIn("google");
-      return;
-    }
     imageInputRef.current?.click();
   };
 
@@ -46,11 +42,14 @@ export function useJobExtraction({
     reader.readAsDataURL(file);
   };
 
-  const handleParsePost = useCallback(async (overrideText, overrideModel) => {
-    if (status === "unauthenticated") {
-      signIn("google");
+  const handleParsePost = useCallback(async (overrideText) => {
+    const { isValid, missing } = validateSettings(settingsRef.current);
+    if (!isValid) {
+      addLog(`Please configure your settings first. Missing: ${missing.join(", ")}`, "error");
+      if (setSettingsOpen) setSettingsOpen(true);
       return;
     }
+
     const textToParse = typeof overrideText === "string" ? overrideText : postText;
     if (!textToParse.trim() && !screenshotData) return;
     setIsParsing(true);
@@ -68,7 +67,6 @@ export function useJobExtraction({
           postText: textToParse,
           image: base64Image,
           mimeType,
-          model: overrideModel || settingsRef.current.MODEL || "openrouter/free",
         }),
       });
 
@@ -95,7 +93,7 @@ export function useJobExtraction({
     } finally {
       setIsParsing(false);
     }
-  }, [postText, screenshotData, addLog, status, settingsRef, setIsManuallyEdited, setIsFollowUp, setActiveTab, setViewMode]);
+  }, [postText, screenshotData, addLog, setIsManuallyEdited, setIsFollowUp, setActiveTab, setViewMode, settingsRef, setSettingsOpen]);
 
   const clearFields = useCallback(() => {
     setPostText("");

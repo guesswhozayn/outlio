@@ -1,13 +1,13 @@
 "use client";
-import { SessionProvider } from "next-auth/react";
+
 import { ThemeProvider } from "next-themes";
 
 export function Providers({ children }) {
   return (
-    <SessionProvider>
-      <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem={false}>
-        {children}
-      </ThemeProvider>
-    </SessionProvider>
+    <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem={false}>
+      {children}
+    </ThemeProvider>
   );
 }
+
+export default Providers;

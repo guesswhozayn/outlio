@@ -1,6 +1,6 @@
 # Outlio
 
-Outlio is a streamlined, AI-powered job application outreach and resume tailoring assistant built with Next.js 16 (App Router), React 19, and OpenRouter API. It automates the workflow of extracting job requirements from posts or screenshots, tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching concise cold outreach emails directly through your connected Gmail account.
+Outlio is a streamlined, AI-powered job application outreach and resume tailoring assistant built with Next.js 16 (App Router), React 19, and OpenRouter API. It automates the workflow of extracting job requirements from posts or screenshots, tailoring master LaTeX resumes, compiling them into ATS-friendly PDFs, and dispatching concise cold outreach emails directly through your configured Gmail account.
 
 ---
 

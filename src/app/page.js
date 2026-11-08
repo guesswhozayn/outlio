@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import Navbar from "@/components/Navbar";
 import JobInput from "@/components/JobInput";
@@ -16,21 +16,41 @@ import { ArrowLeftRight } from "lucide-react";
 function HomeContent() {
   const { theme, setTheme } = useTheme();
   const am = useOutlio();
+  const [showApp, setShowApp] = useState(false);
 
-  if (am.status === "loading") {
-    return (
-      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100dvh' }}>
-        <div className="spinner spinner-lg"></div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("outlio_has_launched");
+      if (stored === "true") {
+        setShowApp(true);
+      }
+    } catch {
+    }
+  }, []);
 
-  if (am.status === "unauthenticated") {
+  const handleLaunchApp = () => {
+    try {
+      localStorage.setItem("outlio_has_launched", "true");
+    } catch {
+    }
+    setShowApp(true);
+  };
+
+  const handleReturnToLanding = () => {
+    try {
+      localStorage.removeItem("outlio_has_launched");
+    } catch {
+    }
+    setShowApp(false);
+  };
+
+  if (!showApp) {
     return (
       <LandingPage
         mounted={am.mounted}
         theme={theme}
         setTheme={setTheme}
+        onLaunchApp={handleLaunchApp}
       />
     );
   }
@@ -44,11 +64,10 @@ function HomeContent() {
         theme={theme}
         setTheme={setTheme}
         setSettingsOpen={am.setSettingsOpen}
-        session={am.session}
+        onReturnToLanding={handleReturnToLanding}
       />
 
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-
         {isInputMode ? (
           <JobInput
             postText={am.postText}
@@ -148,8 +167,10 @@ function HomeContent() {
         settings={am.settings}
         setSettings={am.setSettings}
         isSavingSettings={am.isSavingSettings}
+        isVerifyingGmail={am.isVerifyingGmail}
+        isFetchingFromCloud={am.isFetchingFromCloud}
+        handleFetchFromCloud={am.handleFetchFromCloud}
         handleSaveSettings={am.handleSaveSettings}
-        syncStatus={am.syncStatus}
       />
     </div>
   );
@@ -168,4 +189,3 @@ export default function Home() {
     </Suspense>
   );
 }
-

@@ -1,5 +1,4 @@
 import { useState, useCallback, useSyncExternalStore } from "react";
-import { useSession } from "next-auth/react";
 import { useSettings } from "./useSettings";
 import { useJobExtraction } from "./useJobExtraction";
 import { useResumeTailoring } from "./useResumeTailoring";
@@ -8,7 +7,6 @@ import { useEmailOutreach } from "./useEmailOutreach";
 const emptySubscribe = () => () => {};
 
 export function useOutlio() {
-  const { data: session, status } = useSession();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   const [activeTab, setActiveTab] = useState("preview");
@@ -21,8 +19,6 @@ export function useOutlio() {
   }, []);
 
   const settingsState = useSettings({
-    session,
-    status,
     addLog,
     onLatexUpdated: (latex) => {
       resumeState.handleCompileBaseResume(latex);
@@ -30,8 +26,8 @@ export function useOutlio() {
   });
 
   const extractionState = useJobExtraction({
-    status,
     settingsRef: settingsState.settingsRef,
+    setSettingsOpen: settingsState.setSettingsOpen,
     setActiveTab,
     setViewMode,
     setIsManuallyEdited: (val) => outreachState.setIsManuallyEdited(val),
@@ -40,17 +36,14 @@ export function useOutlio() {
   });
 
   const resumeState = useResumeTailoring({
-    session,
-    status,
     settings: settingsState.settings,
     fields: extractionState.fields,
     postText: extractionState.postText,
+    setSettingsOpen: settingsState.setSettingsOpen,
     addLog,
   });
 
   const outreachState = useEmailOutreach({
-    session,
-    status,
     settings: settingsState.settings,
     fields: extractionState.fields,
     clearFields: extractionState.clearFields,
@@ -58,12 +51,11 @@ export function useOutlio() {
     resumeFile: resumeState.resumeFile,
     compileBaseFromLatex: resumeState.compileBaseFromLatex,
     resetTailoredToDefault: resumeState.resetTailoredToDefault,
+    setSettingsOpen: settingsState.setSettingsOpen,
     addLog,
   });
 
   return {
-    session,
-    status,
     mounted,
 
     // Navigation & UI
@@ -80,8 +72,12 @@ export function useOutlio() {
     settingsOpen: settingsState.settingsOpen,
     setSettingsOpen: settingsState.setSettingsOpen,
     isSavingSettings: settingsState.isSavingSettings,
+    isVerifyingGmail: settingsState.isVerifyingGmail,
+    isFetchingFromCloud: settingsState.isFetchingFromCloud,
+    handleFetchFromCloud: settingsState.handleFetchFromCloud,
     handleSaveSettings: settingsState.handleSaveSettings,
     syncStatus: settingsState.syncStatus,
+    isConfigured: settingsState.isConfigured,
 
     // Job extraction
     postText: extractionState.postText,

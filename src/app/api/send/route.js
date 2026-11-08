@@ -1,42 +1,10 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import { getServerSession } from "next-auth/next";
-import { getToken } from "next-auth/jwt";
-import { authOptions } from "@/lib/auth";
 import { wrapEmailHtml } from "@/lib/emailFormatter";
-
-async function buildRawMessage(mailOptions) {
-  const mail = nodemailer.createTransport({ streamTransport: true, newline: 'unix' });
-  const rawBuffer = await new Promise((resolve, reject) => {
-    mail.sendMail(mailOptions, (err, info) => {
-      if (err) return reject(err);
-      const chunks = [];
-      info.message.on('data', (chunk) => chunks.push(chunk));
-      info.message.on('end', () => resolve(Buffer.concat(chunks)));
-      info.message.on('error', reject);
-    });
-  });
-
-  return rawBuffer
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token?.accessToken) {
-      return NextResponse.json({ error: "Google authentication missing. Please sign in with Google." }, { status: 400 });
-    }
-
-    let toEmail, subject, emailBody, emailHtml, userName;
+    let toEmail, subject, emailBody, emailHtml, userName, gmailUser, gmailAppPassword;
     let resumeAttachment = null;
 
     const contentType = req.headers.get("content-type") || "";
@@ -48,6 +16,8 @@ export async function POST(req) {
       emailBody = body.emailBody;
       emailHtml = body.emailHtml;
       userName = body.userName;
+      gmailUser = body.gmailUser;
+      gmailAppPassword = body.gmailAppPassword;
 
       if (body.resumeBase64) {
         const buffer = Buffer.from(body.resumeBase64, 'base64');
@@ -75,6 +45,8 @@ export async function POST(req) {
       emailBody = formData.get('emailBody');
       emailHtml = formData.get('emailHtml');
       userName = formData.get('userName');
+      gmailUser = formData.get('gmailUser');
+      gmailAppPassword = formData.get('gmailAppPassword');
       const resumeFile = formData.get('resume');
 
       if (resumeFile && typeof resumeFile !== 'string' && resumeFile.size > 0) {
@@ -89,13 +61,29 @@ export async function POST(req) {
       }
     }
 
+    const cleanUser = (gmailUser || process.env.SMTP_USER || "").trim();
+    const cleanPass = (gmailAppPassword || process.env.SMTP_PASS || "").replace(/\s+/g, '');
+
+    if (!cleanUser || !cleanPass) {
+      return NextResponse.json({
+        error: "Gmail credentials not configured. Please add your Gmail address and 16-character App Password in Settings."
+      }, { status: 400 });
+    }
+
     if (!toEmail || !subject || !emailBody) {
       return NextResponse.json({ error: "Missing required email fields." }, { status: 400 });
     }
 
-    const senderEmail = session.user.email;
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: cleanUser,
+        pass: cleanPass,
+      },
+    });
+
     const mailOptions = {
-      from: userName ? `"${userName.replace(/["\r\n]/g, '')}" <${senderEmail}>` : senderEmail,
+      from: userName ? `"${userName.replace(/["\r\n]/g, '')}" <${cleanUser}>` : cleanUser,
       to: toEmail,
       subject: subject,
       text: emailBody,
@@ -109,25 +97,10 @@ export async function POST(req) {
       mailOptions.attachments = [resumeAttachment];
     }
 
-    const rawMessage = await buildRawMessage(mailOptions);
-    const gmailRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ raw: rawMessage }),
-    });
-
-    if (!gmailRes.ok) {
-      const errData = await gmailRes.json().catch(() => ({}));
-      const errMsg = errData.error?.message || "Failed to send email via Gmail API";
-      throw new Error(errMsg);
-    }
-
-    const result = await gmailRes.json();
-    return NextResponse.json({ success: true, messageId: result.id });
+    const info = await transporter.sendMail(mailOptions);
+    return NextResponse.json({ success: true, messageId: info.messageId });
   } catch (error) {
+    console.error("Nodemailer send error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

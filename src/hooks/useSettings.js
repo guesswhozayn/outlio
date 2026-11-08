@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import localforage from "localforage";
-import { signIn } from "next-auth/react";
 
 export const INITIAL_SETTINGS = {
   MODEL: "openrouter/free",
+  GMAIL_USER: "",
+  GMAIL_APP_PASSWORD: "",
   USER_NAME: "",
   USER_PHONE: "",
   USER_LINKEDIN: "",
@@ -14,157 +15,154 @@ export const INITIAL_SETTINGS = {
   EMAIL_FONT_SIZE: "15px",
 };
 
-export function useSettings({ session, status, addLog, onLatexUpdated }) {
+export function validateSettings(s) {
+  const missing = [];
+  if (!s?.GMAIL_USER?.trim()) missing.push("Gmail Address");
+  if (!s?.GMAIL_APP_PASSWORD?.trim()) missing.push("Gmail App Password");
+  if (!s?.USER_NAME?.trim()) missing.push("Name");
+  if (!s?.USER_PHONE?.trim()) missing.push("Phone");
+  if (!s?.USER_LINKEDIN?.trim()) missing.push("LinkedIn");
+  if (!s?.LATEX_RESUME?.trim()) missing.push("LaTeX Template");
+  return {
+    isValid: missing.length === 0,
+    missing,
+  };
+}
+
+export function useSettings({ addLog, onLatexUpdated }) {
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [syncStatus, setSyncStatus] = useState({ isCloud: false, storageType: "local_file" });
+  const [isVerifyingGmail, setIsVerifyingGmail] = useState(false);
+  const [isFetchingFromCloud, setIsFetchingFromCloud] = useState(false);
+  const [syncStatus, setSyncStatus] = useState({ isCloud: false, storageType: "browser" });
 
   const settingsRef = useRef(settings);
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
 
-  const hasInitializedUserRef = useRef(null);
-
   const loadSettings = useCallback(async () => {
     try {
-      const email = session?.user?.email;
       let localSettings = {};
-      if (email) {
-        try {
-          localSettings = (await localforage.getItem(`outlio_settings_${email}`)) || {};
-        } catch (err) {
-          console.warn("Browser storage access denied:", err);
-        }
-      }
-
-      let pendingSettings = null;
       try {
-        const pendingRaw = typeof window !== "undefined" ? localStorage.getItem("outlio_pending_settings") : null;
-        if (pendingRaw) {
-          pendingSettings = JSON.parse(pendingRaw);
-          localStorage.removeItem("outlio_pending_settings");
-        }
+        localSettings = (await localforage.getItem("outlio_settings")) || {};
       } catch (err) {
-        console.warn("Could not read pending settings:", err);
+        console.warn("Browser storage access denied:", err);
       }
-
-      const res = await fetch("/api/settings", { cache: "no-store" });
-      const parsed = await res.json();
-
-      if (parsed && parsed._sync) {
-        setSyncStatus(parsed._sync);
-        delete parsed._sync;
-      }
-
-      let finalSettings = { ...localSettings };
-
-      if (parsed && typeof parsed === "object" && !parsed.error && Object.keys(parsed).length > 0) {
-        finalSettings = { ...finalSettings, ...parsed };
-      }
-
-      if (pendingSettings && Object.keys(pendingSettings).length > 0) {
-        finalSettings = { ...finalSettings, ...pendingSettings };
-        fetch("/api/settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(finalSettings),
-        }).catch(err => console.error("Auto-sync pending settings failed:", err));
-        addLog("Pending configuration settings applied to your account.", "success");
-      }
-
-      if (email && Object.keys(finalSettings).length > 0) {
-        try {
-          await localforage.setItem(`outlio_settings_${email}`, finalSettings);
-        } catch (err) {
-          console.warn("Browser storage access denied:", err);
-        }
-      }
-
-      let savedModel = finalSettings.MODEL || "openrouter/free";
-      if (typeof savedModel !== "string" || !savedModel.includes("/")) {
-        savedModel = "openrouter/free";
-      }
-      finalSettings.MODEL = savedModel;
-      if (!finalSettings.USER_NAME && session?.user?.name) {
-        finalSettings.USER_NAME = session.user.name;
-      }
-
-      setSettings({ ...INITIAL_SETTINGS, ...finalSettings });
+      setSettings({ ...INITIAL_SETTINGS, ...localSettings });
     } catch (e) {
       console.error(e);
     }
-  }, [session, addLog]);
+  }, []);
 
   useEffect(() => {
-    if (status === "authenticated") {
-      const userKey = session?.user?.email || "authenticated_user";
-      if (hasInitializedUserRef.current !== userKey) {
-        hasInitializedUserRef.current = userKey;
-        loadSettings();
-        addLog("Dashboard initialized. Ready to process jobs.", "info");
-      }
-    } else if (status === "unauthenticated") {
-      hasInitializedUserRef.current = null;
+    loadSettings();
+    addLog("Dashboard initialized. Ready to process jobs.", "info");
+  }, [loadSettings, addLog]);
+
+  const handleFetchFromCloud = async () => {
+    const gmailUser = settings?.GMAIL_USER?.trim();
+    const gmailAppPassword = settings?.GMAIL_APP_PASSWORD?.trim();
+
+    if (!gmailUser || !gmailAppPassword) {
+      addLog("Enter your Gmail address and App Password first.", "error");
+      return;
     }
-  }, [status, session?.user?.email, loadSettings, addLog]);
+
+    setIsFetchingFromCloud(true);
+    addLog("Verifying Gmail credentials...", "info");
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "fetch",
+          gmailUser,
+          gmailAppPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Authentication failed");
+      }
+
+      addLog("Gmail credentials verified successfully!", "success");
+
+      if (data.found && data.settings) {
+        const merged = {
+          ...settings,
+          ...data.settings,
+          GMAIL_USER: gmailUser,
+          GMAIL_APP_PASSWORD: gmailAppPassword,
+        };
+        setSettings(merged);
+        await localforage.setItem("outlio_settings", merged);
+        setSyncStatus({ isCloud: true, storageType: "supabase" });
+        if (merged.LATEX_RESUME?.trim() && onLatexUpdated) {
+          onLatexUpdated(merged.LATEX_RESUME);
+        }
+        addLog("Loaded existing profile from database.", "success");
+      } else {
+        addLog("Credentials valid. No existing database profile found—fill in your details and click Save.", "info");
+      }
+    } catch (err) {
+      addLog(`Verification failed: ${err.message}`, "error");
+    } finally {
+      setIsFetchingFromCloud(false);
+    }
+  };
 
   const handleSaveSettings = async (e) => {
     if (e?.preventDefault) {
       e.preventDefault();
     }
-    if (status === "unauthenticated") {
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("outlio_pending_settings", JSON.stringify(settings));
-        }
-        addLog("Settings cached locally. Redirecting to Google sign-in...", "info");
-      } catch (err) {
-        console.warn("Could not cache pending settings:", err);
-      }
-      signIn("google");
+
+    const { isValid, missing } = validateSettings(settings);
+    if (!isValid) {
+      addLog(`Please complete all required fields: ${missing.join(", ")}`, "error");
       return;
     }
+
     setIsSavingSettings(true);
+    setIsVerifyingGmail(true);
+    addLog("Verifying credentials and encrypting profile...", "info");
+
     try {
-      const email = session?.user?.email;
-      if (email) {
-        try {
-          await localforage.setItem(`outlio_settings_${email}`, settings);
-        } catch (err) {
-          console.warn("Browser storage access denied:", err);
-        }
+      try {
+        await localforage.setItem("outlio_settings", settings);
+      } catch (err) {
+        console.warn("Browser storage access denied:", err);
       }
 
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
+        body: JSON.stringify({
+          action: "save",
+          settings,
+        }),
       });
 
+      const resData = await res.json();
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to save settings");
+        throw new Error(resData.error || "Failed to save settings");
       }
 
-      const resData = await res.json();
-      if (resData.isCloud) {
-        setSyncStatus({ isCloud: true, storageType: resData.storageType || "supabase" });
-        addLog("Settings saved and synced to cloud.", "success");
-      } else {
-        setSyncStatus({ isCloud: false, storageType: resData.storageType || "local_file" });
-        addLog("Settings saved to this device.", "info");
-      }
+      setSyncStatus({ isCloud: true, storageType: "supabase" });
+      addLog("Settings verified, encrypted, and saved to database.", "success");
       setSettingsOpen(false);
 
       if (settings?.LATEX_RESUME?.trim() && onLatexUpdated) {
         onLatexUpdated(settings.LATEX_RESUME);
       }
     } catch (e) {
-      addLog(`Error saving settings: ${e.message}`, "error");
+      addLog(`Settings error: ${e.message}`, "error");
     } finally {
       setIsSavingSettings(false);
+      setIsVerifyingGmail(false);
     }
   };
 
@@ -175,7 +173,11 @@ export function useSettings({ session, status, addLog, onLatexUpdated }) {
     settingsOpen,
     setSettingsOpen,
     isSavingSettings,
+    isVerifyingGmail,
+    isFetchingFromCloud,
+    handleFetchFromCloud,
     handleSaveSettings,
     syncStatus,
+    isConfigured: validateSettings(settings).isValid,
   };
 }
