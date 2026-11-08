@@ -47,48 +47,46 @@ export function useEmailOutreach({
 
   const compiled = useMemo(() => {
     const pTitle = fields.jobTitle || "[Position Title]";
-    const cName = fields.company || "[Company Name]";
+    const cName = fields.company || "your company";
     const uName = settings.USER_NAME || "[Your Name]";
-    const recName = fields.recipientName || "Hiring Team";
+    const uPhone = settings.USER_PHONE || "";
+    const uLink = settings.USER_LINKEDIN || "";
 
-    let salutation = `Hi ${recName},`;
-    if (!recName || recName === "Hiring Team" || recName === "Hiring Manager" || recName === "Team") {
-      salutation = `Hi ${cName} Hiring Team,`;
-    }
+    const salutation = fields.recipientName && fields.recipientName.toLowerCase() !== "hiring team"
+      ? `Hi ${fields.recipientName},`
+      : "Hi Hiring Team,";
 
-    let contactBlock = "";
-    if (settings.USER_PORTFOLIO) {
-      contactBlock += `\nPortfolio: ${settings.USER_PORTFOLIO}`;
-    }
-    if (settings.USER_GITHUB) {
-      contactBlock += `\nGitHub: ${settings.USER_GITHUB}`;
-    }
-    if (settings.USER_LINKEDIN) {
-      contactBlock += `\nLinkedIn: ${settings.USER_LINKEDIN}`;
-    }
-    if (settings.USER_PHONE) {
-      contactBlock += `\nPhone: ${settings.USER_PHONE}`;
-    }
-
-    let body = "";
-    let sub = "";
+    const contactParts = [];
+    if (uPhone && uPhone !== "[Phone Number]") contactParts.push(uPhone);
+    if (uLink && uLink !== "[LinkedIn Profile]") contactParts.push(uLink);
+    if (settings.USER_GITHUB) contactParts.push(settings.USER_GITHUB);
+    if (settings.USER_PORTFOLIO) contactParts.push(settings.USER_PORTFOLIO);
+    const contactBlock = contactParts.length > 0 ? `\n${contactParts.join(" | ")}` : "";
 
     if (isFollowUp) {
-      body = `${salutation}\n\nFollowing up on my application for the ${pTitle} role at ${cName}.\n\nMy resume is re-attached for your convenience. Please let me know if you'd be open to a brief conversation.\n\nBest,\n\n${uName}${contactBlock}`;
-      sub = `Following up: ${pTitle} – ${uName}`;
-    } else {
-      body = `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and would love to apply.\n\nMy resume is attached for your review. Please let me know if you'd be open to a quick chat.\n\nBest,\n\n${uName}${contactBlock}`;
-      sub = `Application for ${pTitle} – ${uName}`;
+      return {
+        subject: `Following up: ${pTitle} – ${uName}`,
+        body: `${salutation}\n\nFollowing up on my application for the ${pTitle} role at ${cName}.\n\nMy resume is re-attached for your convenience. Please let me know if you'd be open to a brief conversation.\n\nBest,\n\n${uName}${contactBlock}`,
+      };
     }
 
-    return { subject: sub, body };
-  }, [fields, isFollowUp, settings]);
+    return {
+      subject: `Application for ${pTitle} – ${uName}`,
+      body: `${salutation}\n\nI noticed the ${pTitle} role at ${cName} and would love to apply.\n\nMy resume is attached for your review. Please let me know if you'd be open to a quick chat.\n\nBest,\n\n${uName}${contactBlock}`,
+    };
+  }, [fields, settings, isFollowUp]);
 
   const subject = manualSubject !== null ? manualSubject : compiled.subject;
   const emailBody = manualEmailBody !== null ? manualEmailBody : compiled.body;
-  const emailHtml = manualEmailHtml !== null ? manualEmailHtml : textToHtml(emailBody);
+  const emailHtml = useMemo(() => {
+    if (manualEmailHtml !== null) return manualEmailHtml;
+    return textToHtml(emailBody, {
+      fontFamily: settings?.EMAIL_FONT_FAMILY,
+      fontSize: settings?.EMAIL_FONT_SIZE,
+    });
+  }, [manualEmailHtml, emailBody, settings?.EMAIL_FONT_FAMILY, settings?.EMAIL_FONT_SIZE]);
 
-  const isManuallyEdited = manualSubject !== null || manualEmailBody !== null;
+  const isManuallyEdited = manualSubject !== null || manualEmailBody !== null || manualEmailHtml !== null;
 
   const handleSetIsManuallyEdited = (val) => {
     if (!val) {
